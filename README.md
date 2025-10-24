@@ -87,11 +87,6 @@ Esto facilita ampliar el sistema sin modificar código existente.
 - **[Diagrama de DB](at_home_red/docs/uml/db-uml-v1.svg)**
 - **[Diagrama UI](at_home_red/docs/uml/ui-uml-v1.svg)**
 
-
-![Diagrama de clases](at_home_red/docs/uml/clases-uml-v1.svg)
-![Diagrama de DB](at_home_red/docs/uml/db-uml-v1.svg)
-![Diagrama UI](at_home_red/docs/uml/ui-uml-v1.svg)
-
 > **Versión preliminar:**
 > El modelado UML se encuentra en construcción. Esta es **la primera versión**, elaborada para representar las bases del sistema y comenzar a integrar los patrones de diseño. En próximas iteraciones se unificarán ambos diagramas y se ajustarán los nombres, relaciones y estereotipos según la evolución del código.
 
