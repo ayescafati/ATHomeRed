@@ -1,7 +1,7 @@
 # Web API en construcción — AT Home Red
 
 **Autores:**  
-- Karen Gonzales Ch. · @usuario 
+- Karen Gonzales Ch. · [@KarenGonzalesCh](https://github.com/KarenGonzalesCh)
 - Federico Nicolás Llanes · @usuario  
 - Miguel Ignacio Rodríguez Puertas · [@mirpuertas](https://github.com/mirpuertas)  
 - Ayelén Luján Scafati · [ayescafati](https://github.com/ayescafati)  
