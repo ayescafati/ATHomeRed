@@ -1,10 +1,10 @@
 # Web API en construcción — AT Home Red
 
 **Autores:**  
-Ayelén Luján Scafati  
-Federico Nicolás Llanes  
-Karen Gonzales Ch.  
-Miguel Ignacio Rodríguez Puertas  
+- Karen Gonzales Ch. · @usuario 
+- Federico Nicolás Llanes · @usuario  
+- Miguel Ignacio Rodríguez Puertas · [@mirpuertas](https://github.com/mirpuertas)  
+- Ayelén Luján Scafati · [ayescafati](https://github.com/ayescafati)  
 
 **Materia:** Programación II – UNSAM  
 **Cuatrimestre:** 2C 2025  
@@ -47,7 +47,6 @@ En Argentina, tanto la enfermería domiciliaria como el acompañamiento terapéu
 
 
 ## Estructura del proyecto
-
 ```
 at_home_red/
 │
@@ -67,11 +66,11 @@ at_home_red/
 │   └── interaccion.py           # Clases auxiliares de relación y gestión
 │
 ├── enumeraciones.py             # Estados y días de la semana
-└── __init__.py
+├── __init__.py
+└── docs/uml/                    # Diagramas UML
 ```
 
-
-## Patrrrones de diseño aplicados
+## Patrones de diseño aplicados
 
 ### Observer  
 Permite que los observadores (por ejemplo, `NotificadorEmail` o `AuditLogger`) sean informados automáticamente ante cambios en las consultas.  
@@ -84,9 +83,14 @@ Esto facilita ampliar el sistema sin modificar código existente.
 
 ## Diagramas UML
 
- **Ubicación del diagrama de clases UML:** `at_home_red/docs/uml/clases-uml-v1.svg`
+- **[Diagrama de clases](at_home_red/docs/uml/clases-uml-v1.svg)**
+- **[Diagrama de DB](at_home_red/docs/uml/db-uml-v1.svg)**
+- **[Diagrama UI](at_home_red/docs/uml/ui-uml-v1.svg)**
 
-![UML del proyecto](at_home_red/docs/uml/clases-uml-v1.svg)
+
+![Diagrama de clases](at_home_red/docs/uml/clases-uml-v1.svg)
+![Diagrama de DB](at_home_red/docs/uml/db-uml-v1.svg)
+![Diagrama UI](at_home_red/docs/uml/ui-uml-v1.svg)
 
 > **Versión preliminar:**
 > El modelado UML se encuentra en construcción. Esta es **la primera versión**, elaborada para representar las bases del sistema y comenzar a integrar los patrones de diseño. En próximas iteraciones se unificarán ambos diagramas y se ajustarán los nombres, relaciones y estereotipos según la evolución del código.
@@ -215,11 +219,3 @@ Esto es **intencional en esta primera versión**, ya que el objetivo es explorar
 - Creación de endpoints con **FastAPI**.  
 - Autenticación básica y gestión de usuarios.  
 - Frontend de demostración.  
-
-
-## Licencia
-
-Este proyecto se distribuye bajo licencia **MIT**.  
-
-
-> *AT Home Red es solo el comienzo de una red digital segura, humana y trazable para el acompañamiento terapéutico en Argentina.*
