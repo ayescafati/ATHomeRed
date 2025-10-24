@@ -1,10 +1,10 @@
 # Web API en construcción — AT Home Red
 
 **Autores:**  
-- Karen Gonzales Ch. · [@KarenGonzalesCh](https://github.com/KarenGonzalesCh)
-- Federico Nicolás Llanes · @usuario  
-- Miguel Ignacio Rodríguez Puertas · [@mirpuertas](https://github.com/mirpuertas)  
-- Ayelén Luján Scafati · [ayescafati](https://github.com/ayescafati)  
+- Gonzales Ch., Karen · [@KarenGonzalesCh](https://github.com/KarenGonzalesCh)
+- Llanes, Federico Nicolás · @usuario  
+- Rodríguez Puertas, Miguel Ignacio · [@mirpuertas](https://github.com/mirpuertas)  
+- Scafati, Ayelén Luján · [ayescafati](https://github.com/ayescafati)  
 
 **Materia:** Programación II – UNSAM  
 **Cuatrimestre:** 2C 2025  
