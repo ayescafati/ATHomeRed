@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import date, time
 from decimal import Decimal
 from typing import List, Optional
-from .enumeraciones import DiaSemana
+from ..enumeraciones import DiaSemana
 
 @dataclass(frozen=True)
 class Ubicacion:

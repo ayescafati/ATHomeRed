@@ -5,7 +5,7 @@ from typing import Optional
 from uuid import UUID
 from enum import Enum
 from decimal import Decimal
-from .objetos_valor import Dinero, Ubicacion
+from ..value_objects.objetos_valor import Dinero, Ubicacion
 
 class EstadoConsulta(str, Enum):
     PENDIENTE = "pendiente"

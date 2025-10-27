@@ -10,8 +10,6 @@ from dotenv import load_dotenv
 # Carga .env desde la raíz del repo por defecto; ajustá si lo tenés en otro lado
 load_dotenv()
 
-class Base(DeclarativeBase):
-    metadata = MetaData(schema="athome")
 
 def _build_url() -> str:
     dialect = os.getenv("DB_DIALECT", "sqlite").lower()

@@ -1,5 +1,5 @@
 # test_connection.py
-from app.infra.db.database import ENGINE, DATABASE_URL
+from app.infra.persistence.database import ENGINE, DATABASE_URL
 from sqlalchemy import text
 
 def main():

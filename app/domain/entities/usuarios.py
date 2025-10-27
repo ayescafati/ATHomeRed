@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 from uuid import UUID
 
-from .objetos_valor import Ubicacion, Disponibilidad, Matricula
+from ..value_objects.objetos_valor import Ubicacion, Disponibilidad, Matricula
 from .catalogo import Especialidad
 
 @dataclass
