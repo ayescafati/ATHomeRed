@@ -8,6 +8,7 @@ from .servicios import EspecialidadORM, profesional_especialidad
 from .agenda import DisponibilidadORM, EstadoConsultaORM, ConsultaORM, EventoORM
 from .matriculas import MatriculaORM
 from .valoraciones import ValoracionORM
+from .publicaciones import PublicacionORM
 
 __all__ = [
     "Base", "metadata",
@@ -16,5 +17,5 @@ __all__ = [
     "PacienteORM", "RelacionSolicitanteORM",
     "EspecialidadORM", "profesional_especialidad",
     "DisponibilidadORM", "EstadoConsultaORM", "ConsultaORM", "EventoORM",
-    "MatriculaORM", "ValoracionORM",
+    "MatriculaORM", "ValoracionORM", "PublicacionORM",
 ]
