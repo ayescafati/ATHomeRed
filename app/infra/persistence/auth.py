@@ -1,0 +1,39 @@
+"""
+Modelos ORM para autenticación y auditoría.
+"""
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Text
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from .base import Base, SCHEMA
+
+
+class RefreshTokenORM(Base):
+    """Tabla para almacenar refresh tokens JWT."""
+    __tablename__ = "refresh_tokens"
+    __table_args__ = {"schema": SCHEMA}
+
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, ForeignKey(f"{SCHEMA}.usuario.id"), nullable=False, index=True)
+    token = Column(String(500), unique=True, nullable=False, index=True)
+    expira_en = Column(DateTime, nullable=False)
+    revocado = Column(Boolean, default=False, nullable=False)
+    ip_address = Column(String(45), nullable=True)
+    user_agent = Column(String(255), nullable=True)
+    creado_en = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relación con Usuario
+    usuario = relationship("UsuarioORM", back_populates="refresh_tokens")
+
+
+class AuditoriaLoginORM(Base):
+    """Tabla de auditoría para intentos de login."""
+    __tablename__ = "auditoria_login"
+    __table_args__ = {"schema": SCHEMA}
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), nullable=False, index=True)
+    exitoso = Column(Boolean, nullable=False)
+    ip_address = Column(String(45), nullable=True)
+    user_agent = Column(String(255), nullable=True)
+    motivo = Column(Text, nullable=True)  # Razón del fallo si exitoso=False
+    fecha = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
