@@ -1,9 +1,10 @@
 from __future__ import annotations
 import uuid
 from typing import Optional
-from sqlalchemy import UniqueConstraint, CheckConstraint, text
+from datetime import datetime
+from sqlalchemy import UniqueConstraint, CheckConstraint, text, DateTime, String, Integer
 from sqlalchemy.dialects.postgresql import UUID, VARCHAR as Varchar
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base, SCHEMA
 
 class UsuarioORM(Base):
@@ -31,4 +32,15 @@ class UsuarioORM(Base):
 
     es_solicitante: Mapped[bool] = mapped_column(default=True, nullable=False)
     es_profesional: Mapped[bool] = mapped_column(default=False, nullable=False)
+
+    # Campos de autenticación
+    password_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    ultimo_login: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    intentos_fallidos: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    bloqueado_hasta: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    activo: Mapped[bool] = mapped_column(default=True, nullable=False)
+    verificado: Mapped[bool] = mapped_column(default=False, nullable=False)
+
+    # Relaciones
+    refresh_tokens = relationship("RefreshTokenORM", back_populates="usuario", cascade="all, delete-orphan")
 
