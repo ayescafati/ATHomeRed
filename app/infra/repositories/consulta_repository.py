@@ -33,6 +33,20 @@ class ConsultaRepository:
         # Obtener el código del estado
         estado_codigo = orm.estado.codigo if orm.estado else "pendiente"
         
+        # Obtener ubicación usando la jerarquía correcta
+        ubicacion = None
+        if orm.direccion_servicio:
+            dir_orm = orm.direccion_servicio
+            ubicacion = Ubicacion(
+                provincia=dir_orm.barrio.departamento.provincia.nombre,
+                departamento=dir_orm.barrio.departamento.nombre,
+                barrio=dir_orm.barrio.nombre,
+                calle=dir_orm.calle,
+                numero=str(dir_orm.numero),
+                latitud=dir_orm.latitud,
+                longitud=dir_orm.longitud
+            )
+        
         return Cita(
             id=orm.id,
             paciente_id=orm.paciente_id,
@@ -40,13 +54,7 @@ class ConsultaRepository:
             fecha=orm.fecha,
             hora_inicio=orm.hora_inicio,
             hora_fin=orm.hora_fin,
-            ubicacion=Ubicacion(
-                provincia=orm.direccion_servicio.provincia if orm.direccion_servicio else "",
-                departamento=orm.direccion_servicio.departamento if orm.direccion_servicio else "",
-                barrio=orm.direccion_servicio.barrio if orm.direccion_servicio else "",
-                calle=orm.direccion_servicio.calle if orm.direccion_servicio else "",
-                numero=orm.direccion_servicio.numero if orm.direccion_servicio else ""
-            ) if orm.direccion_servicio else None,
+            ubicacion=ubicacion,
             estado=EstadoCita(estado_codigo),
             notas=orm.notas or "",
             # TODO: Agregar monto_acordado si se tiene en el ORM

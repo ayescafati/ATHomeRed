@@ -2,14 +2,15 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
 
-from domain.entities.usuarios import Profesional
-from domain.entities.catalogo import Especialidad
-from domain.value_objects.objetos_valor import Ubicacion, Disponibilidad, Matricula
-from domain.enumeraciones import DiaSemana
-from infra.persistence.perfiles import ProfesionalORM
-from infra.persistence.servicios import EspecialidadORM
-from infra.persistence.ubicacion import DireccionORM, BarrioORM, DepartamentoORM, ProvinciaORM
-from infra.repositories.direccion_repository import DireccionRepository
+from app.domain.entities.usuarios import Profesional
+from app.domain.entities.catalogo import Especialidad
+from app.domain.value_objects.objetos_valor import Ubicacion, Disponibilidad, Matricula
+from app.domain.enumeraciones import DiaSemana
+from app.infra.persistence.perfiles import ProfesionalORM
+from app.infra.persistence.usuarios import UsuarioORM
+from app.infra.persistence.servicios import EspecialidadORM
+from app.infra.persistence.ubicacion import DireccionORM, BarrioORM, DepartamentoORM, ProvinciaORM
+from app.infra.repositories.direccion_repository import DireccionRepository
 
 class ProfesionalRepository:
     def __init__(self, session: Session):
@@ -27,15 +28,23 @@ class ProfesionalRepository:
                 departamento=orm.direccion.barrio.departamento.nombre,
                 barrio=orm.direccion.barrio.nombre,
                 calle=orm.direccion.calle,
-                numero=str(orm.direccion.numero)
+                numero=str(orm.direccion.numero),
+                latitud=orm.direccion.latitud,
+                longitud=orm.direccion.longitud
+            )
+        
+        # Si no hay dirección, crear una ubicación vacía
+        if ubicacion is None:
+            ubicacion = Ubicacion(
+                provincia="", departamento="", barrio="", calle="", numero=""
             )
         
         return Profesional(
-            id=UUID(orm.id),
-            nombre=orm.nombre,
-            apellido=orm.apellido,
-            email=orm.email,
-            celular=orm.celular,
+            id=orm.id,
+            nombre=orm.usuario.nombre,        # ✅ Acceso correcto vía usuario
+            apellido=orm.usuario.apellido,    # ✅
+            email=orm.usuario.email,          # ✅
+            celular=orm.usuario.celular or "", # ✅
             ubicacion=ubicacion,
             activo=orm.activo,
             verificado=orm.verificado,
@@ -75,12 +84,14 @@ class ProfesionalRepository:
         ).all()
         return [self._to_domain(orm) for orm in orms]
     
-    def crear(self, profesional: Profesional, direccion_id: Optional[UUID] = None) -> Profesional:
+    def crear(self, profesional: Profesional, usuario_id: Optional[UUID] = None, direccion_id: Optional[UUID] = None) -> Profesional:
         """
         Guarda nuevo profesional (dominio → ORM)
         
         Args:
             profesional: Entidad de dominio Profesional
+            usuario_id: (Opcional) ID de usuario existente. 
+                       Si no se proporciona, se crea un nuevo UsuarioORM.
             direccion_id: (Opcional) ID de dirección existente. 
                          Si no se proporciona y el profesional tiene ubicación,
                          se crea automáticamente usando DireccionRepository.
@@ -89,34 +100,42 @@ class ProfesionalRepository:
             Profesional creado con ID asignado
             
         Example:
-            # Opción 1: Con dirección existente
-            prof_repo.crear(profesional, direccion_id=uuid_existente)
+            # Opción 1: Con usuario y dirección existentes
+            prof_repo.crear(profesional, usuario_id=uuid_usuario, direccion_id=uuid_dir)
             
-            # Opción 2: Crear dirección automáticamente
+            # Opción 2: Crear todo automáticamente
             profesional.ubicacion = Ubicacion(...)
-            prof_repo.crear(profesional)  # Crea la dirección internamente
+            prof_repo.crear(profesional)  # Crea usuario y dirección
         """
-        # Si no se proporciona direccion_id, intentar crear desde ubicacion
+        # Paso 1: Crear o usar UsuarioORM
+        if usuario_id is None:
+            # Crear nuevo usuario
+            usuario_orm = UsuarioORM(
+                nombre=profesional.nombre,
+                apellido=profesional.apellido,
+                email=profesional.email,
+                celular=profesional.celular,
+                es_profesional=True,
+                es_solicitante=False,
+                activo=profesional.activo,
+                verificado=profesional.verificado
+            )
+            self.session.add(usuario_orm)
+            self.session.flush()  # Para obtener el ID
+            usuario_id = usuario_orm.id
+        
+        # Paso 2: Crear o usar DireccionORM
         if direccion_id is None and profesional.ubicacion:
-            # Crear dirección usando DireccionRepository
             direccion_orm = self.direccion_repo.crear_con_jerarquia(profesional.ubicacion)
             direccion_id = direccion_orm.id
         
-        # Validar que tenemos una dirección
-        if direccion_id is None:
-            raise ValueError("El profesional debe tener una ubicación o proporcionar direccion_id")
-        
-        # Crear profesional
+        # Paso 3: Crear ProfesionalORM
         orm = ProfesionalORM(
-            id=str(profesional.id),
-            nombre=profesional.nombre,
-            apellido=profesional.apellido,
-            email=profesional.email,
-            celular=profesional.celular,
+            usuario_id=usuario_id,
             direccion_id=direccion_id,
             activo=profesional.activo,
             verificado=profesional.verificado,
-            matricula=""
+            matricula=""  # Campo legacy
         )
         self.session.add(orm)
         self.session.commit()
@@ -148,17 +167,20 @@ class ProfesionalRepository:
         """
         # Obtener el ORM existente
         orm = self.session.query(ProfesionalORM).filter(
-            ProfesionalORM.id == str(profesional.id)
+            ProfesionalORM.id == profesional.id
         ).first()
         
         if not orm:
             raise ValueError(f"Profesional con id {profesional.id} no encontrado")
         
-        # Actualizar campos básicos
-        orm.nombre = profesional.nombre
-        orm.apellido = profesional.apellido
-        orm.email = profesional.email
-        orm.celular = profesional.celular
+        # Actualizar campos del usuario
+        orm.usuario.nombre = profesional.nombre
+        orm.usuario.apellido = profesional.apellido
+        orm.usuario.email = profesional.email
+        orm.usuario.celular = profesional.celular
+        orm.usuario.activo = profesional.activo
+        
+        # Actualizar campos del profesional
         orm.activo = profesional.activo
         orm.verificado = profesional.verificado
         

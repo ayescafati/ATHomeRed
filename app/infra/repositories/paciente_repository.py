@@ -38,43 +38,33 @@ class PacienteRepository:
             ).first()
             
             if direccion_orm:
-                ubicacion = Ubicacion(
-                    provincia=direccion_orm.provincia,
-                    departamento=direccion_orm.departamento,
-                    barrio=direccion_orm.barrio,
-                    calle=direccion_orm.calle,
-                    numero=direccion_orm.numero
-                )
+                # Reutilizar el método del DireccionRepository
+                ubicacion = self.direccion_repo._to_domain(direccion_orm)
         
-        # Si no hay dirección en FK, crear una ubicación vacía
+        # Si no hay dirección, crear una ubicación vacía
         if ubicacion is None:
             ubicacion = Ubicacion(
-                provincia="",
-                departamento="",
-                barrio="",
-                calle="",
-                numero=""
+                provincia="", departamento="", barrio="", calle="", numero=""
             )
         
         return Paciente(
             id=orm.id,
             nombre=orm.nombre,
             apellido=orm.apellido,
-            email="",  # TODO: El ORM no tiene email, considerar agregar
-            celular="",  # TODO: El ORM no tiene celular, considerar agregar
             ubicacion=ubicacion,
-            activo=True,  # TODO: El ORM no tiene campo activo
+            solicitante_id=orm.solicitante_id,
+            relacion=orm.relacion.nombre if orm.relacion else "self",
             fecha_nacimiento=orm.fecha_nacimiento or date(2000, 1, 1),
-            cobertura="",  # TODO: El ORM no tiene cobertura, considerar agregar
             notas=orm.notas or ""
         )
     
-    def _to_orm(self, paciente: Paciente, orm: PacienteORM = None) -> PacienteORM:
+    def _to_orm(self, paciente: Paciente, solicitante_id: UUID, orm: PacienteORM = None) -> PacienteORM:
         """
         Convierte una entidad de dominio a modelo ORM.
         
         Args:
             paciente: Entidad Paciente del dominio
+            solicitante_id: UUID del solicitante responsable
             orm: Modelo ORM existente (para actualización)
             
         Returns:
@@ -88,7 +78,7 @@ class PacienteRepository:
                 apellido=paciente.apellido,
                 fecha_nacimiento=paciente.fecha_nacimiento,
                 notas=paciente.notas,
-                # TODO: Agregar solicitante_id (requerido en el ORM)
+                solicitante_id=solicitante_id
             )
         else:
             # Actualizar ORM existente
@@ -96,6 +86,7 @@ class PacienteRepository:
             orm.apellido = paciente.apellido
             orm.fecha_nacimiento = paciente.fecha_nacimiento
             orm.notas = paciente.notas
+            # No actualizamos solicitante_id en update (es inmutable)
         
         return orm
     
@@ -196,8 +187,7 @@ class PacienteRepository:
             direccion_id = direccion_orm.id
         
         # Crear el paciente ORM
-        orm = self._to_orm(paciente)
-        orm.solicitante_id = solicitante_id
+        orm = self._to_orm(paciente, solicitante_id)
         orm.direccion_id = direccion_id
         
         self.session.add(orm)
@@ -244,15 +234,21 @@ class PacienteRepository:
             orm.direccion_id = direccion_id
         elif paciente.ubicacion:
             # Verificar si la ubicación cambió
-            ubicacion_actual = self.direccion_repo._to_domain(orm.direccion) if orm.direccion else None
+            ubicacion_actual = None
+            if orm.direccion_id:
+                direccion_orm = self.session.query(DireccionORM).filter(
+                    DireccionORM.id == orm.direccion_id
+                ).first()
+                if direccion_orm:
+                    ubicacion_actual = self.direccion_repo._to_domain(direccion_orm)
             
             if ubicacion_actual != paciente.ubicacion:
                 # La ubicación cambió, crear nueva dirección
                 nueva_direccion = self.direccion_repo.crear_con_jerarquia(paciente.ubicacion)
                 orm.direccion_id = nueva_direccion.id
         
-        # Actualizar campos básicos
-        orm = self._to_orm(paciente, orm)
+        # Actualizar campos básicos usando solicitante_id existente
+        orm = self._to_orm(paciente, orm.solicitante_id, orm)
         
         self.session.commit()
         self.session.refresh(orm)

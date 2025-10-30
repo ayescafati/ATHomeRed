@@ -2,8 +2,8 @@ from sqlalchemy.orm import Session
 from typing import List, Optional, Tuple
 from uuid import UUID
 
-from domain.value_objects.objetos_valor import Ubicacion
-from infra.persistence.ubicacion import (
+from app.domain.value_objects.objetos_valor import Ubicacion
+from app.infra.persistence.ubicacion import (
     ProvinciaORM,
     DepartamentoORM,
     BarrioORM,
@@ -26,7 +26,7 @@ class DireccionRepository:
     def __init__(self, session: Session):
         self.session = session
     
-    # ==================== CONVERSIÓN ====================
+    # CONVERSIÓN
     
     def _to_domain(self, orm: DireccionORM) -> Ubicacion:
         """Convierte DireccionORM a Ubicacion (value object)"""
@@ -38,7 +38,7 @@ class DireccionRepository:
             numero=str(orm.numero)
         )
     
-    # ==================== BÚSQUEDA O CREACIÓN ====================
+    # BÚSQUEDA O CREACIÓN 
     
     def buscar_o_crear_provincia(self, nombre: str) -> ProvinciaORM:
         """
@@ -125,7 +125,7 @@ class DireccionRepository:
         
         return barrio
     
-    # ==================== CREACIÓN COMPLETA ====================
+    # CREACIÓN COMPLETA
     
     def crear_con_jerarquia(self, ubicacion: Ubicacion) -> DireccionORM:
         """
@@ -189,7 +189,7 @@ class DireccionRepository:
         
         return direccion
     
-    # ==================== CONSULTAS ====================
+    # CONSULTAS
     
     def obtener_por_id(self, id: UUID) -> Optional[DireccionORM]:
         """Obtiene una dirección por su ID"""
@@ -224,7 +224,7 @@ class DireccionRepository:
             DireccionORM.numero == int(numero)
         ).first()
     
-    # ==================== CATÁLOGOS ====================
+    # CATÁLOGOS
     
     def listar_provincias(self) -> List[ProvinciaORM]:
         """Lista todas las provincias disponibles"""
@@ -257,7 +257,7 @@ class DireccionRepository:
             DireccionORM.numero
         ).all()
     
-    # ==================== BÚSQUEDAS AVANZADAS ====================
+    # BÚSQUEDAS AVANZADAS
     
     def buscar_direcciones(
         self,
@@ -319,9 +319,9 @@ class DireccionRepository:
         provincia = departamento.provincia
         
         return (provincia, departamento, barrio, direccion)
-    
-    # ==================== GEOCODING (PREPARADO) ====================
-    
+
+    # GEOCODING (PREPARADO)
+
     def actualizar_coordenadas(
         self, 
         direccion_id: UUID, 
@@ -349,7 +349,7 @@ class DireccionRepository:
         
         return direccion
     
-    # ==================== ESTADÍSTICAS ====================
+    # ESTADÍSTICAS
     
     def contar_provincias(self) -> int:
         """Cuenta el total de provincias"""
