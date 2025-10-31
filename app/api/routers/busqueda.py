@@ -46,7 +46,7 @@ def buscar_profesionales(
             nombre_especialidad = criterios.nombre_especialidad,
             provincia = criterios.provincia,
             departamento = criterios.departamento,
-            barrio = criterios.barrio
+            barrio = criterios.barrio,
         )
 
         if(filtro.id_especialidad or filtro.nombre_especialidad) and (filtro.provincia or filtro.departamento or filtro.barrio):

@@ -265,12 +265,8 @@ class ProfesionalRepository:
                 ProvinciaORM.nombre.ilike(f"%{provincia}%")
             )
         if departamento:
-            if not provincia:  # Si no se filtró por provincia, hacer el join
-                query = query.join(DireccionORM.barrio).join(BarrioORM.departamento)
             query = query.filter(DepartamentoORM.nombre.ilike(f"%{departamento}%"))
         if barrio:
-            if not provincia and not departamento:  # Si no se filtró antes, hacer el join
-                query = query.join(DireccionORM.barrio)
             query = query.filter(BarrioORM.nombre.ilike(f"%{barrio}%"))
         
         orms = query.all()
