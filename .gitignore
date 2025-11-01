@@ -1,1 +1,84 @@
+# Python
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Databases
+# SQLite databases (locales)
+*.db
+*.sqlite
+*.sqlite3
+
+# PostgreSQL dumps
+*.sql
+
+# IDEs
+# VS Code
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+
+# JetBrains
+*.iml
+.idea/
+
+# OS
+# Windows
+Thumbs.db
+estore.pointstore
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Alembic
+# NO ignorar la estructura de Alembic, pero SÍ ignorar archivos temporales
+alembic/__pycache__/
+alembic/versions/__pycache__/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Temporales
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# Build
+build/
+dist/
+*.egg-info/
 .venv
