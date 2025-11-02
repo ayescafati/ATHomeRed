@@ -2,13 +2,14 @@
 Router para búsqueda de profesionales
 Implementa las estrategias de búsqueda del dominio
 """
+
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.schemas import (
     BusquedaProfesionalRequest,
     BusquedaProfesionalResponse,
-    ProfesionalResponse
+    ProfesionalResponse,
 )
 from app.api.dependencies import get_profesional_repository
 from app.infra.repositories.profesional_repository import ProfesionalRepository
@@ -20,11 +21,11 @@ router = APIRouter()
 @router.post("/profesionales", response_model=BusquedaProfesionalResponse)
 def buscar_profesionales(
     criterios: BusquedaProfesionalRequest,
-    repo: ProfesionalRepository = Depends(get_profesional_repository)
+    repo: ProfesionalRepository = Depends(get_profesional_repository),
 ):
     """
     Busca profesionales según múltiples criterios.
-    
+
     Utiliza el patrón Strategy del dominio para aplicar filtros:
     - Por especialidad
     - Por ubicación (provincia/departamento)
@@ -34,34 +35,34 @@ def buscar_profesionales(
     try:
         # Obtener todos los profesionales según filtros básicos
         profesionales = repo.listar_activos() if criterios.solo_activos else []
-        
+
         # TODO: Implementar BuscadorProfesionales del dominio
         # buscador = BuscadorProfesionales()
         # resultados = buscador.buscar(profesionales, criterios)
-        
+
         criterios_aplicados = {
             "especialidad_id": criterios.especialidad_id,
             "provincia": criterios.provincia,
             "departamento": criterios.departamento,
             "dia_semana": criterios.dia_semana,
             "solo_verificados": criterios.solo_verificados,
-            "solo_activos": criterios.solo_activos
+            "solo_activos": criterios.solo_activos,
         }
-        
+
         # Filtrar solo verificados si se solicita
         if criterios.solo_verificados:
             profesionales = [p for p in profesionales if p.verificado]
-        
+
         return BusquedaProfesionalResponse(
             profesionales=profesionales,
             total=len(profesionales),
-            criterios_aplicados=criterios_aplicados
+            criterios_aplicados=criterios_aplicados,
         )
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error en búsqueda: {str(e)}"
+            detail=f"Error en búsqueda: {str(e)}",
         )
 
 
@@ -77,7 +78,7 @@ def listar_especialidades():
             {"id": 2, "nombre": "Kinesiología"},
             {"id": 3, "nombre": "Medicina General"},
             {"id": 4, "nombre": "Pediatría"},
-            {"id": 5, "nombre": "Geriatría"}
+            {"id": 5, "nombre": "Geriatría"},
         ]
     }
 
@@ -94,6 +95,6 @@ def listar_provincias():
             "Córdoba",
             "Santa Fe",
             "Mendoza",
-            "Tucumán"
+            "Tucumán",
         ]
     }

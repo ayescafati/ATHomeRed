@@ -4,7 +4,15 @@ import uuid
 from datetime import date, time
 from typing import List, Dict, Any, TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, Index, ForeignKey, JSON, Text, UniqueConstraint, text
+from sqlalchemy import (
+    CheckConstraint,
+    Index,
+    ForeignKey,
+    JSON,
+    Text,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,6 +25,7 @@ if TYPE_CHECKING:
 
 # Disponibilidad, EstadoConsulta, Consulta, Evento
 
+
 class DisponibilidadORM(Base):
     __tablename__ = "disponibilidad"
     __table_args__ = (
@@ -26,7 +35,9 @@ class DisponibilidadORM(Base):
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
     )
     profesional_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -34,11 +45,15 @@ class DisponibilidadORM(Base):
         nullable=False,
     )
     # Guardamos como texto 'LUN,MAR,MIÉ' etc. (simple y portable)
-    dias_semana_text: Mapped[str] = mapped_column("dias_semana", Text, nullable=False)
+    dias_semana_text: Mapped[str] = mapped_column(
+        "dias_semana", Text, nullable=False
+    )
     hora_inicio: Mapped[time] = mapped_column(nullable=False)
     hora_fin: Mapped[time] = mapped_column(nullable=False)
 
-    profesional: Mapped["ProfesionalORM"] = relationship("ProfesionalORM", back_populates="disponibilidades")
+    profesional: Mapped["ProfesionalORM"] = relationship(
+        "ProfesionalORM", back_populates="disponibilidades"
+    )
 
     @property
     def dias_semana(self) -> list[str]:
@@ -73,7 +88,9 @@ class ConsultaORM(Base):
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
     )
     paciente_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -101,10 +118,16 @@ class ConsultaORM(Base):
         nullable=False,
     )
 
-    notas: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
+    notas: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("''")
+    )
 
-    paciente: Mapped["PacienteORM"] = relationship("PacienteORM", back_populates="consultas")
-    profesional: Mapped["ProfesionalORM"] = relationship("ProfesionalORM", back_populates="consultas")
+    paciente: Mapped["PacienteORM"] = relationship(
+        "PacienteORM", back_populates="consultas"
+    )
+    profesional: Mapped["ProfesionalORM"] = relationship(
+        "ProfesionalORM", back_populates="consultas"
+    )
     direccion_servicio: Mapped["DireccionORM"] = relationship("DireccionORM")
     estado: Mapped["EstadoConsultaORM"] = relationship("EstadoConsultaORM")
 
@@ -121,7 +144,9 @@ class EventoORM(Base):
     __table_args__ = ({"schema": SCHEMA},)
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
     )
 
     consulta_id: Mapped[uuid.UUID] = mapped_column(
@@ -133,7 +158,9 @@ class EventoORM(Base):
     tipo: Mapped[str] = mapped_column(nullable=False)
 
     # Datos adicionales del evento (quién lo generó, motivo, campos previos/nuevos, etc.)
-    datos: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    datos: Mapped[Dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
 
     consulta: Mapped["ConsultaORM"] = relationship(
         "ConsultaORM",

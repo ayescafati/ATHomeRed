@@ -2,6 +2,7 @@
 Script para verificar/crear el esquema 'athome' en la base de datos.
 Ejecutar ANTES de la primera migración de Alembic.
 """
+
 import sys
 import os
 from pathlib import Path
@@ -13,22 +14,26 @@ sys.path.insert(0, str(ROOT_DIR))
 from app.infra.persistence.database import ENGINE
 from app.infra.persistence.base import SCHEMA
 
+
 def crear_esquema():
     """Crea el esquema athome si no existe."""
     print(f"Verificando esquema '{SCHEMA}'...")
-    
+
     with ENGINE.connect() as connection:
         # Verificar si el esquema existe
-        result = connection.execute(text(
-            "SELECT schema_name FROM information_schema.schemata WHERE schema_name = :schema"
-        ), {"schema": SCHEMA})
-        
+        result = connection.execute(
+            text(
+                "SELECT schema_name FROM information_schema.schemata WHERE schema_name = :schema"
+            ),
+            {"schema": SCHEMA},
+        )
+
         existe = result.fetchone() is not None
-        
+
         if existe:
             print(f"El esquema '{SCHEMA}' ya existe.")
             return True
-        
+
         # Crear el esquema
         print(f"Creando esquema '{SCHEMA}'...")
         connection.execute(text(f"CREATE SCHEMA {SCHEMA}"))

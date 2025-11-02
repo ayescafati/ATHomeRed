@@ -23,16 +23,28 @@ class PublicacionORM(Base):
         {"schema": SCHEMA},
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
     profesional_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey(f"{SCHEMA}.profesional.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey(f"{SCHEMA}.profesional.id", ondelete="CASCADE"),
+        nullable=False,
     )
     especialidad_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey(f"{SCHEMA}.especialidad.id_especialidad", ondelete="RESTRICT"), nullable=False
+        Integer,
+        ForeignKey(
+            f"{SCHEMA}.especialidad.id_especialidad", ondelete="RESTRICT"
+        ),
+        nullable=False,
     )
     titulo: Mapped[str] = mapped_column(Text, nullable=False)
     descripcion: Mapped[str] = mapped_column(Text, nullable=False)
     fecha_publicacion: Mapped[date] = mapped_column(Date, nullable=False)
 
-    profesional: Mapped["ProfesionalORM"] = relationship("ProfesionalORM", back_populates="publicaciones")
+    profesional: Mapped["ProfesionalORM"] = relationship(
+        "ProfesionalORM", back_populates="publicaciones"
+    )
     especialidad: Mapped["EspecialidadORM"] = relationship("EspecialidadORM")

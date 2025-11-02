@@ -1,6 +1,7 @@
 """
 Router para autenticación y autorización
 """
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
@@ -16,7 +17,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 def registrar_usuario(data: RegisterRequest):
     """
     Registra un nuevo usuario en el sistema.
-    
+
     TODO: Implementar
     - Hash de contraseña (bcrypt)
     - Validación de email único
@@ -25,7 +26,7 @@ def registrar_usuario(data: RegisterRequest):
     """
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Endpoint en desarrollo"
+        detail="Endpoint en desarrollo",
     )
 
 
@@ -33,7 +34,7 @@ def registrar_usuario(data: RegisterRequest):
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """
     Autentica un usuario y devuelve un token JWT.
-    
+
     TODO: Implementar
     - Validar credenciales
     - Generar token JWT
@@ -41,7 +42,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Endpoint en desarrollo"
+        detail="Endpoint en desarrollo",
     )
 
 
@@ -49,7 +50,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
 def logout():
     """
     Cierra la sesión del usuario.
-    
+
     TODO: Implementar (opcional, depende de la estrategia de tokens)
     - Invalidar token en blacklist
     - Limpiar sesión
@@ -61,7 +62,7 @@ def logout():
 def obtener_usuario_actual(token: str = Depends(oauth2_scheme)):
     """
     Obtiene la información del usuario autenticado.
-    
+
     TODO: Implementar
     - Decodificar token JWT
     - Obtener usuario de DB
@@ -69,5 +70,5 @@ def obtener_usuario_actual(token: str = Depends(oauth2_scheme)):
     """
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Endpoint en desarrollo"
+        detail="Endpoint en desarrollo",
     )

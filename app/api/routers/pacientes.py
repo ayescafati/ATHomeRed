@@ -1,6 +1,7 @@
 """
 Router para gestión de pacientes
 """
+
 from typing import List
 from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -14,14 +15,16 @@ from app.domain.value_objects.objetos_valor import Ubicacion
 router = APIRouter()
 
 
-@router.post("/", response_model=PacienteResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=PacienteResponse, status_code=status.HTTP_201_CREATED
+)
 def crear_paciente(
     data: PacienteCreate,
-    repo: PacienteRepository = Depends(get_paciente_repository)
+    repo: PacienteRepository = Depends(get_paciente_repository),
 ):
     """
     Crea un nuevo paciente en el sistema.
-    
+
     El paciente estará asociado a un solicitante (usuario que gestiona sus turnos).
     El email/celular de contacto se obtienen del solicitante.
     """
@@ -34,9 +37,9 @@ def crear_paciente(
             calle=data.ubicacion.calle,
             numero=data.ubicacion.numero,
             latitud=data.ubicacion.latitud,
-            longitud=data.ubicacion.longitud
+            longitud=data.ubicacion.longitud,
         )
-        
+
         # Crear entidad de dominio
         paciente = Paciente(
             id=uuid4(),
@@ -46,42 +49,43 @@ def crear_paciente(
             ubicacion=ubicacion,
             solicitante_id=data.solicitante_id,
             relacion=data.relacion,
-            notas=data.notas or ""
+            notas=data.notas or "",
         )
-        
+
         # Guardar en el repositorio
-        paciente_creado = repo.crear(paciente, solicitante_id=data.solicitante_id)
-        
+        paciente_creado = repo.crear(
+            paciente, solicitante_id=data.solicitante_id
+        )
+
         return paciente_creado
-        
+
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error al crear paciente: {str(e)}"
+            detail=f"Error al crear paciente: {str(e)}",
         )
 
 
 @router.get("/{paciente_id}", response_model=PacienteResponse)
 def obtener_paciente(
     paciente_id: UUID,
-    repo: PacienteRepository = Depends(get_paciente_repository)
+    repo: PacienteRepository = Depends(get_paciente_repository),
 ):
     """
     Obtiene un paciente por su ID.
     """
     paciente = repo.obtener_por_id(paciente_id)
-    
+
     if not paciente:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Paciente con ID {paciente_id} no encontrado"
+            detail=f"Paciente con ID {paciente_id} no encontrado",
         )
-    
+
     return paciente
 
 
@@ -89,11 +93,11 @@ def obtener_paciente(
 def listar_pacientes(
     solicitante_id: UUID = None,
     limite: int = 100,
-    repo: PacienteRepository = Depends(get_paciente_repository)
+    repo: PacienteRepository = Depends(get_paciente_repository),
 ):
     """
     Lista pacientes.
-    
+
     - Si se proporciona solicitante_id, lista solo sus pacientes
     - Sino, lista todos los pacientes (con límite)
     """
@@ -101,7 +105,7 @@ def listar_pacientes(
         pacientes = repo.listar_por_solicitante(solicitante_id)
     else:
         pacientes = repo.listar_todos(limite=limite)
-    
+
     return pacientes
 
 
@@ -109,19 +113,19 @@ def listar_pacientes(
 def actualizar_paciente(
     paciente_id: UUID,
     data: PacienteCreate,
-    repo: PacienteRepository = Depends(get_paciente_repository)
+    repo: PacienteRepository = Depends(get_paciente_repository),
 ):
     """
     Actualiza los datos de un paciente.
     """
     paciente = repo.obtener_por_id(paciente_id)
-    
+
     if not paciente:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Paciente con ID {paciente_id} no encontrado"
+            detail=f"Paciente con ID {paciente_id} no encontrado",
         )
-    
+
     try:
         # Actualizar los campos
         paciente.nombre = data.nombre
@@ -129,7 +133,7 @@ def actualizar_paciente(
         paciente.fecha_nacimiento = data.fecha_nacimiento
         paciente.relacion = data.relacion
         paciente.notas = data.notas or ""
-        
+
         # Actualizar ubicación si cambió
         if data.ubicacion:
             paciente.ubicacion = Ubicacion(
@@ -139,41 +143,40 @@ def actualizar_paciente(
                 calle=data.ubicacion.calle,
                 numero=data.ubicacion.numero,
                 latitud=data.ubicacion.latitud,
-                longitud=data.ubicacion.longitud
+                longitud=data.ubicacion.longitud,
             )
-        
+
         # Guardar cambios
         paciente_actualizado = repo.actualizar(paciente)
-        
+
         if not paciente_actualizado:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Error al actualizar paciente"
+                detail="Error al actualizar paciente",
             )
-        
+
         return paciente_actualizado
-        
+
     except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
         )
 
 
 @router.delete("/{paciente_id}", status_code=status.HTTP_204_NO_CONTENT)
 def eliminar_paciente(
     paciente_id: UUID,
-    repo: PacienteRepository = Depends(get_paciente_repository)
+    repo: PacienteRepository = Depends(get_paciente_repository),
 ):
     """
     Elimina un paciente (soft delete recomendado, hard delete implementado).
     """
     exito = repo.eliminar(paciente_id)
-    
+
     if not exito:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Paciente con ID {paciente_id} no encontrado"
+            detail=f"Paciente con ID {paciente_id} no encontrado",
         )
-    
+
     return None

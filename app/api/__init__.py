@@ -1,6 +1,7 @@
 """
 API Package - FastAPI routers, schemas y dependencies
 """
+
 from . import dependencies
 from . import schemas
 from . import routers

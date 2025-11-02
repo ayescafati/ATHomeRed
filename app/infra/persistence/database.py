@@ -16,20 +16,23 @@ def _build_url() -> str:
 
     if dialect == "postgresql":
         user = os.getenv("DB_USER", "")
-        pwd  = os.getenv("DB_PASSWORD", "")
+        pwd = os.getenv("DB_PASSWORD", "")
         host = os.getenv("DB_HOST", "localhost")
-        port = os.getenv("DB_PORT", "5432")  # 5432 directo, 6543 pool (pgBouncer)
-        db   = os.getenv("DB_NAME", "postgres")
-        ssl  = os.getenv("DB_SSLMODE", "require")  # Supabase exige SSL
+        port = os.getenv(
+            "DB_PORT", "5432"
+        )  # 5432 directo, 6543 pool (pgBouncer)
+        db = os.getenv("DB_NAME", "postgres")
+        ssl = os.getenv("DB_SSLMODE", "require")  # Supabase exige SSL
 
         # URL-encode por si hay símbolos
         user_enc = quote_plus(user or "")
-        pwd_enc  = quote_plus(pwd or "")
+        pwd_enc = quote_plus(pwd or "")
 
         return f"postgresql+psycopg2://{user_enc}:{pwd_enc}@{host}:{port}/{db}?sslmode={ssl}"
 
     # default local (MVP)
     return "sqlite:///./app.db"
+
 
 DATABASE_URL = _build_url()
 
@@ -54,7 +57,10 @@ ENGINE = create_engine(
     future=True,
 )
 
-SessionLocal = sessionmaker(bind=ENGINE, autoflush=False, autocommit=False, expire_on_commit=False)
+SessionLocal = sessionmaker(
+    bind=ENGINE, autoflush=False, autocommit=False, expire_on_commit=False
+)
+
 
 def get_session():
     db = SessionLocal()
