@@ -12,7 +12,15 @@ from app.api.schemas import (
 )
 from app.api.dependencies import get_profesional_repository
 from app.infra.repositories.profesional_repository import ProfesionalRepository
-from app.domain.strategies.buscador import BuscadorProfesionales
+# from app.domain.strategies.buscador import BuscadorProfesionales
+
+from app.domain.entities.catalogo import FiltroBusqueda
+from app.domain.strategies.buscador import Buscador
+from app.domain.strategies.estrategia import (
+    BusquedaPorZona,
+    BusquedaPorEspecialidad,
+    BusquedaCombinada
+)
 
 router = APIRouter()
 
@@ -31,38 +39,84 @@ def buscar_profesionales(
     - Por disponibilidad (día de la semana)
     - Solo verificados/activos
     """
+
     try:
-        # Obtener todos los profesionales según filtros básicos
-        profesionales = repo.listar_activos() if criterios.solo_activos else []
+        filtro = FiltroBusqueda(
+            id_especialidad = criterios.especialidad_id,
+            nombre_especialidad = criterios.nombre_especialidad,
+            provincia = criterios.provincia,
+            departamento = criterios.departamento,
+            barrio = criterios.barrio,
+        )
+
+        if(filtro.id_especialidad or filtro.nombre_especialidad) and (filtro.provincia or filtro.departamento or filtro.barrio):
+            estrategia = BusquedaCombinada()
+        elif(filtro.id_especialidad or filtro.nombre_especialidad):
+            estrategia = BusquedaPorEspecialidad()
+        elif(filtro.provincia or filtro.departamento or filtro.barrio):
+            estrategia = BusquedaPorZona()
         
-        # TODO: Implementar BuscadorProfesionales del dominio
-        # buscador = BuscadorProfesionales()
-        # resultados = buscador.buscar(profesionales, criterios)
-        
-        criterios_aplicados = {
-            "especialidad_id": criterios.especialidad_id,
-            "provincia": criterios.provincia,
-            "departamento": criterios.departamento,
-            "dia_semana": criterios.dia_semana,
-            "solo_verificados": criterios.solo_verificados,
-            "solo_activos": criterios.solo_activos
-        }
-        
-        # Filtrar solo verificados si se solicita
-        if criterios.solo_verificados:
-            profesionales = [p for p in profesionales if p.verificado]
-        
-        return BusquedaProfesionalResponse(
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Se debe especificar un criterio de búsqueda válido."
+            )
+
+        buscador = Buscador(repo, estrategia)
+        profesionales = buscador.buscar(filtro)
+
+        return  BusquedaProfesionalResponse(
             profesionales=profesionales,
             total=len(profesionales),
-            criterios_aplicados=criterios_aplicados
+            criterios_aplicados = filtro.__dict__       
         )
-        
+    
+    except ValueError as ve:
+        # Errores de validación de filtros (de las estrategias)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(ve)
+        )
     except Exception as e:
+        # Otros errores inesperados
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error en búsqueda: {str(e)}"
         )
+
+
+    # try:
+    #     # Obtener todos los profesionales según filtros básicos
+    #     profesionales = repo.listar_activos() if criterios.solo_activos else []
+        
+    #     # TODO: Implementar BuscadorProfesionales del dominio
+    #     # buscador = BuscadorProfesionales()
+    #     # resultados = buscador.buscar(profesionales, criterios)
+        
+    #     criterios_aplicados = {
+    #         "especialidad_id": criterios.especialidad_id,
+    #         "provincia": criterios.provincia,
+    #         "departamento": criterios.departamento,
+    #         "dia_semana": criterios.dia_semana,
+    #         "solo_verificados": criterios.solo_verificados,
+    #         "solo_activos": criterios.solo_activos
+    #     }
+        
+    #     # Filtrar solo verificados si se solicita
+    #     if criterios.solo_verificados:
+    #         profesionales = [p for p in profesionales if p.verificado]
+        
+    #     return BusquedaProfesionalResponse(
+    #         profesionales=profesionales,
+    #         total=len(profesionales),
+    #         criterios_aplicados=criterios_aplicados
+    #     )
+        
+    # except Exception as e:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #         detail=f"Error en búsqueda: {str(e)}"
+    #     )
 
 
 @router.get("/especialidades")
