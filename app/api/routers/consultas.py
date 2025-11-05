@@ -3,7 +3,7 @@ Router para gestión de consultas/citas médicas
 """
 from typing import List
 from uuid import UUID, uuid4
-from datetime import date
+from datetime import date, datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.schemas import ConsultaCreate, ConsultaResponse, ConsultaUpdate
@@ -14,6 +14,7 @@ from app.infra.repositories.paciente_repository import PacienteRepository
 from app.domain.entities.agenda import Cita
 from app.domain.enumeraciones import EstadoCita
 from app.domain.value_objects.objetos_valor import Ubicacion
+from app.domain.observers.observadores import EventBus
 
 router = APIRouter()
 
@@ -51,6 +52,32 @@ def crear_consulta(
                 detail=f"Paciente con ID {data.paciente_id} no encontrado"
             )
         
+        if data.hora_fin <= data.hora_inicio:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La hora de fin debe ser posterior a la hora de inicio"
+            )
+
+        if data.fecha < date.today():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Ni se pueden crear consultas en fechas pasadas"
+            )    
+
+        consultas_existentes = repo.listar_por_profesional(
+            profesional_id = data.profesional_id,
+            desde = data.fecha,
+            hasta = data.fecha,
+            solo_activas = True
+        )
+
+        for c in consultas_existentes:
+            if (data.hora_inicio < c.hora_fin) and (data.hora_fin > c.hora_inicio):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El profesional no está disponible en el horario seleccionado"
+                )
+
         # Crear ubicación
         ubicacion = Ubicacion(
             provincia=data.ubicacion.provincia,

@@ -84,6 +84,10 @@ class ProfesionalRepository:
         ).all()
         return [self._to_domain(orm) for orm in orms]
     
+    def listar_todos(self) -> List[Profesional]:
+        orms = self.session.query(ProfesionalORM).all()
+        return [self._to_domain(orm) for orm in orms]
+    
     def crear(self, profesional: Profesional, usuario_id: Optional[UUID] = None, direccion_id: Optional[UUID] = None) -> Profesional:
         """
         Guarda nuevo profesional (dominio → ORM)

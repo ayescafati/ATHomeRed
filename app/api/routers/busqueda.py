@@ -84,41 +84,6 @@ def buscar_profesionales(
             detail=f"Error en búsqueda: {str(e)}"
         )
 
-
-    # try:
-    #     # Obtener todos los profesionales según filtros básicos
-    #     profesionales = repo.listar_activos() if criterios.solo_activos else []
-        
-    #     # TODO: Implementar BuscadorProfesionales del dominio
-    #     # buscador = BuscadorProfesionales()
-    #     # resultados = buscador.buscar(profesionales, criterios)
-        
-    #     criterios_aplicados = {
-    #         "especialidad_id": criterios.especialidad_id,
-    #         "provincia": criterios.provincia,
-    #         "departamento": criterios.departamento,
-    #         "dia_semana": criterios.dia_semana,
-    #         "solo_verificados": criterios.solo_verificados,
-    #         "solo_activos": criterios.solo_activos
-    #     }
-        
-    #     # Filtrar solo verificados si se solicita
-    #     if criterios.solo_verificados:
-    #         profesionales = [p for p in profesionales if p.verificado]
-        
-    #     return BusquedaProfesionalResponse(
-    #         profesionales=profesionales,
-    #         total=len(profesionales),
-    #         criterios_aplicados=criterios_aplicados
-    #     )
-        
-    # except Exception as e:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         detail=f"Error en búsqueda: {str(e)}"
-    #     )
-
-
 @router.get("/especialidades")
 def listar_especialidades():
     """

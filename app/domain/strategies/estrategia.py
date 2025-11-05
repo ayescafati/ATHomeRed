@@ -33,7 +33,7 @@ class BusquedaPorZona(EstrategiaBusqueda):
             departamento = filtro.departamento,
             barrio = filtro.barrio
         )
-
+       
 class BusquedaPorEspecialidad(EstrategiaBusqueda):
     def buscar(self, repo: ProfesionalRepository, filtro: FiltroBusqueda) -> list[Profesional]:
         if not filtro.id_especialidad and not filtro.nombre_especialidad:

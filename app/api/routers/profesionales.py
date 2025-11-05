@@ -128,8 +128,7 @@ def listar_profesionales(
     if solo_activos:
         profesionales = repo.listar_activos()
     else:
-        # TODO: Implementar listar_todos en el repositorio
-        profesionales = repo.listar_activos()
+        profesionales = repo.listar_todos()
     
     return profesionales
 
@@ -151,9 +150,27 @@ def actualizar_profesional(
             detail=f"Profesional con ID {profesional_id} no encontrado"
         )
     
-    # TODO: Implementar método de actualización en el repositorio
-    # Por ahora retornamos el mismo profesional
-    return profesional
+    if data.nombre is not None:
+        profesional.nombre = data.nombre
+    if data.apellido is not None:
+        profesional.apellido = data.apellido
+    if data.celular is not None:
+        profesional.celular = data.celular
+
+    if data.ubicacion is not None:
+        profesional.ubicacion = Ubicacion(
+            provincia=data.ubicacion.provincia,
+            departamento=data.ubicacion.departamento,
+            barrio=data.ubicacion.barrio,
+            calle=data.ubicacion.calle,
+            numero=data.ubicacion.numero,
+            latitud=data.ubicacion.latitud,
+            longitud=data.ubicacion.longitud
+        )
+
+    profesional_actualizado = repo.actualizar(profesional)
+
+    return profesional_actualizado
 
 
 @router.delete("/{profesional_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -172,9 +189,7 @@ def eliminar_profesional(
             detail=f"Profesional con ID {profesional_id} no encontrado"
         )
     
-    # TODO: Implementar desactivación en el repositorio
     profesional.desactivar()
-    # repo.actualizar(profesional)
     
     return None
 

@@ -181,8 +181,10 @@ class ConsultaUpdate(BaseModel):
 class BusquedaProfesionalRequest(BaseModel):
     """Schema para búsqueda de profesionales"""
     especialidad_id: Optional[int] = None
+    nombre_especialidad: Optional[str] = None
     provincia: Optional[str] = None
     departamento: Optional[str] = None
+    barrio: Optional[str] = None
     dia_semana: Optional[int] = Field(None, ge=0, le=6, description="0=Lunes, 6=Domingo")
     solo_verificados: bool = True
     solo_activos: bool = True
