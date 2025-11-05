@@ -265,53 +265,25 @@ class ProfesionalRepository:
                 ProvinciaORM.nombre.ilike(f"%{provincia}%")
             )
         if departamento:
+            if not provincia:  # Si no se filtró por provincia, hacer el join
+                query = query.join(DireccionORM.barrio).join(BarrioORM.departamento)
             query = query.filter(DepartamentoORM.nombre.ilike(f"%{departamento}%"))
         if barrio:
+            if not provincia and not departamento:  # Si no se filtró antes, hacer el join
+                query = query.join(DireccionORM.barrio)
             query = query.filter(BarrioORM.nombre.ilike(f"%{barrio}%"))
         
         orms = query.all()
         return [self._to_domain(orm) for orm in orms]
     
-    def buscar_combinado(
-        self,
-        especialidad_nombre: Optional[str] = None,
-        provincia: Optional[str] = None,
-        departamento: Optional[str] = None,
-        barrio: Optional[str] = None
-    ) -> List[Profesional]:
-        """
-        Busca profesionales por ubicación y/o especialidad
-        Mantiene la misma firma y estilo que los otros métodos
-        """
-        query = self.session.query(ProfesionalORM).join(
-            ProfesionalORM.direccion
-        ).outerjoin(
-            ProfesionalORM.especialidades
-        ).filter(
-            ProfesionalORM.activo == True
-        )
-
-        # Ubicación
-        if provincia:
-            query = query.join(DireccionORM.barrio).join(BarrioORM.departamento).join(DepartamentoORM.provincia).filter(
-                ProvinciaORM.nombre.ilike(f"%{provincia}%")
-            )
-        if departamento:
-            query = query.join(DireccionORM.barrio).join(BarrioORM.departamento).filter(
-                DepartamentoORM.nombre.ilike(f"%{departamento}%")
-            )
-        if barrio:
-            query = query.join(DireccionORM.barrio).filter(
-                BarrioORM.nombre.ilike(f"%{barrio}%")
-            )
-
-        # Especialidad
-        if especialidad_nombre:
-            query = query.filter(EspecialidadORM.nombre.ilike(f"%{especialidad_nombre}%"))
-
-        orms = query.all()
+    def listar_verificados(self) -> List[Profesional]:
+        """Lista solo profesionales verificados y activos"""
+        orms = self.session.query(ProfesionalORM).filter(
+            ProfesionalORM.activo == True,
+            ProfesionalORM.verificado == True
+        ).all()
+        
         return [self._to_domain(orm) for orm in orms]
-
     
     def verificar(self, id: UUID) -> Optional[Profesional]:
         """Marca un profesional como verificado"""

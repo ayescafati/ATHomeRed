@@ -39,7 +39,6 @@ class FiltroBusqueda:
     # TODOS opcionales; la estrategia decide cómo combinarlos.
     id_especialidad: Optional[int] = None
     nombre_especialidad: Optional[str] = None
-    barrio: Optional[str] = None
     departamento: Optional[str] = None
     provincia: Optional[str] = None
     texto: Optional[str] = None

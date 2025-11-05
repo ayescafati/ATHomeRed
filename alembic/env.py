@@ -2,7 +2,7 @@
 Alembic environment configuration
 """
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, pool, text
 from alembic import context
 import os
 import sys
@@ -85,6 +85,15 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
+        # Ensure schema and extension exist when using PostgreSQL
+        try:
+            url = str(connectable.engine.url)
+            if url.startswith("postgresql"):
+                connection.execute(text("CREATE SCHEMA IF NOT EXISTS athome"))
+                connection.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
+        except Exception:
+            # Don't fail migrations if extension creation isn't permitted; gen_random_uuid must exist though
+            pass
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
