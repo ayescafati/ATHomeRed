@@ -80,8 +80,8 @@ class ProfesionalCreate(UsuarioBase):
 
     ubicacion: UbicacionSchema
     especialidades: List[int] = Field(description="IDs de especialidades")
-    disponibilidades: Optional[List[DisponibilidadSchema]] = []
-    matriculas: Optional[List[MatriculaSchema]] = []
+    disponibilidades: Optional[List[DisponibilidadSchema]] = None
+    matriculas: Optional[List[MatriculaSchema]] = None
 
 
 class ProfesionalResponse(UsuarioBase):
@@ -106,6 +106,7 @@ class ProfesionalUpdate(BaseModel):
     apellido: Optional[str] = None
     celular: Optional[str] = None
     ubicacion: Optional[UbicacionSchema] = None
+    especialidades: Optional[List[int]] = None
     disponibilidades: Optional[List[DisponibilidadSchema]] = None
 
 
@@ -166,6 +167,7 @@ class ConsultaCreate(BaseModel):
 
     profesional_id: UUID
     paciente_id: UUID
+    solicitante_id: UUID  # Requerido para validación de policies
     fecha: date
     hora_inicio: time
     hora_fin: time
@@ -209,8 +211,10 @@ class BusquedaProfesionalRequest(BaseModel):
     """Schema para búsqueda de profesionales"""
 
     especialidad_id: Optional[int] = None
+    nombre_especialidad: Optional[str] = None
     provincia: Optional[str] = None
     departamento: Optional[str] = None
+    barrio: Optional[str] = None
     dia_semana: Optional[int] = Field(
         None, ge=0, le=6, description="0=Lunes, 6=Domingo"
     )

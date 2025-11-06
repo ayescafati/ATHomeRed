@@ -11,8 +11,12 @@ from app.api.schemas import (
     ProfesionalResponse,
     ProfesionalUpdate,
 )
-from app.api.dependencies import get_profesional_repository
+from app.api.dependencies import (
+    get_profesional_repository,
+    get_catalogo_repository,
+)
 from app.infra.repositories.profesional_repository import ProfesionalRepository
+from app.infra.repositories.catalogo_repository import CatalogoRepository
 from app.domain.entities.usuarios import Profesional
 from app.domain.value_objects.objetos_valor import (
     Ubicacion,
@@ -35,6 +39,7 @@ router = APIRouter()
 def crear_profesional(
     data: ProfesionalCreate,
     repo: ProfesionalRepository = Depends(get_profesional_repository),
+    catalogo_repo: CatalogoRepository = Depends(get_catalogo_repository),
 ):
     """
     Crea un nuevo profesional en el sistema.
@@ -51,8 +56,16 @@ def crear_profesional(
             longitud=data.ubicacion.longitud,
         )
 
-        # TODO: Obtener especialidades desde el repo de catálogo
+        # Validar y obtener especialidades desde el catálogo
         especialidades = []
+        for esp_id in data.especialidades:
+            especialidad = catalogo_repo.obtener_especialidad_por_id(esp_id)
+            if not especialidad:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Especialidad con ID {esp_id} no encontrada",
+                )
+            especialidades.append(especialidad)
 
         # Convertir disponibilidades
         disponibilidades = [
@@ -138,8 +151,7 @@ def listar_profesionales(
     if solo_activos:
         profesionales = repo.listar_activos()
     else:
-        # TODO: Implementar listar_todos en el repositorio
-        profesionales = repo.listar_activos()
+        profesionales = repo.listar_todos()
 
     return profesionales
 
@@ -149,6 +161,7 @@ def actualizar_profesional(
     profesional_id: UUID,
     data: ProfesionalUpdate,
     repo: ProfesionalRepository = Depends(get_profesional_repository),
+    catalogo_repo: CatalogoRepository = Depends(get_catalogo_repository),
 ):
     """
     Actualiza los datos de un profesional.
@@ -161,9 +174,50 @@ def actualizar_profesional(
             detail=f"Profesional con ID {profesional_id} no encontrado",
         )
 
-    # TODO: Implementar método de actualización en el repositorio
-    # Por ahora retornamos el mismo profesional
-    return profesional
+    if data.nombre is not None:
+        profesional.nombre = data.nombre
+    if data.apellido is not None:
+        profesional.apellido = data.apellido
+    if data.celular is not None:
+        profesional.celular = data.celular
+
+    if data.ubicacion is not None:
+        profesional.ubicacion = Ubicacion(
+            provincia=data.ubicacion.provincia,
+            departamento=data.ubicacion.departamento,
+            barrio=data.ubicacion.barrio,
+            calle=data.ubicacion.calle,
+            numero=data.ubicacion.numero,
+            latitud=data.ubicacion.latitud,
+            longitud=data.ubicacion.longitud,
+        )
+
+    if data.especialidades is not None:
+        # Validar y actualizar especialidades
+        especialidades = []
+        for esp_id in data.especialidades:
+            especialidad = catalogo_repo.obtener_especialidad_por_id(esp_id)
+            if not especialidad:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Especialidad con ID {esp_id} no encontrada",
+                )
+            especialidades.append(especialidad)
+        profesional.especialidades = especialidades
+
+    if data.disponibilidades is not None:
+        profesional.disponibilidades = [
+            Disponibilidad(
+                dias_semana=[DiaSemana(d) for d in disp.dias_semana],
+                hora_inicio=disp.hora_inicio,
+                hora_fin=disp.hora_fin,
+            )
+            for disp in data.disponibilidades
+        ]
+
+    profesional_actualizado = repo.actualizar(profesional)
+
+    return profesional_actualizado
 
 
 @router.delete("/{profesional_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -182,9 +236,8 @@ def eliminar_profesional(
             detail=f"Profesional con ID {profesional_id} no encontrado",
         )
 
-    # TODO: Implementar desactivación en el repositorio
-    profesional.desactivar()
-    # repo.actualizar(profesional)
+    # Desactivar usando el método del repositorio
+    repo.desactivar(profesional_id)
 
     return None
 
@@ -196,7 +249,9 @@ def verificar_profesional(
 ):
     """
     Marca un profesional como verificado.
-    Requiere permisos de administrador (TODO: agregar autenticación).
+
+    NOTA: En producción agregar: current_user = Depends(get_current_user)
+          y validar que sea admin.
     """
     profesional = repo.obtener_por_id(profesional_id)
 
@@ -206,8 +261,7 @@ def verificar_profesional(
             detail=f"Profesional con ID {profesional_id} no encontrado",
         )
 
-    # TODO: Implementar verificación en el dominio y repositorio
-    # profesional.verificar()
-    # repo.actualizar(profesional)
+    # Verificar usando el método del repositorio
+    profesional_verificado = repo.verificar(profesional_id)
 
-    return profesional
+    return profesional_verificado

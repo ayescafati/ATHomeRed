@@ -6,19 +6,25 @@ from typing import List
 from uuid import UUID, uuid4
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
 from app.api.schemas import ConsultaCreate, ConsultaResponse, ConsultaUpdate
 from app.api.dependencies import (
     get_consulta_repository,
     get_profesional_repository,
     get_paciente_repository,
+    get_db,
 )
+from app.api.event_bus import get_event_bus
+from app.api.policies import IntegrityPolicies
 from app.infra.repositories.consulta_repository import ConsultaRepository
 from app.infra.repositories.profesional_repository import ProfesionalRepository
 from app.infra.repositories.paciente_repository import PacienteRepository
 from app.domain.entities.agenda import Cita
 from app.domain.enumeraciones import EstadoCita
 from app.domain.value_objects.objetos_valor import Ubicacion
+from app.domain.eventos import CitaCreada
+from app.domain.observers.observadores import EventBus
 
 router = APIRouter()
 
@@ -31,32 +37,81 @@ def crear_consulta(
     repo: ConsultaRepository = Depends(get_consulta_repository),
     prof_repo: ProfesionalRepository = Depends(get_profesional_repository),
     pac_repo: PacienteRepository = Depends(get_paciente_repository),
+    db: Session = Depends(get_db),
+    event_bus: EventBus = Depends(get_event_bus),
 ):
     """
-    Crea una nueva consulta médica.
+    Crea una nueva consulta/cita en estado PENDIENTE.
 
-    - Verifica que profesional y paciente existan
-    - Crea la cita en estado PENDIENTE
-    - TODO: Validar disponibilidad del profesional
-    - TODO: Aplicar estrategia de asignación (ver domain/strategies)
-    - TODO: Notificar a los observadores (ver domain/observers)
+    Valida:
+    - Profesional verificado y activo
+    - Paciente pertenece al solicitante
+    - Solicitante activo
+    - Disponibilidad horaria (evita solapamientos)
+    - Fecha y horarios válidos
+
+    Publica evento CitaCreada en el EventBus para notificaciones.
     """
     try:
-        # Validar que el profesional existe
+        policies = IntegrityPolicies()
+
+        # POLICY 1: Validar que el profesional es VERIFICADO y ACTIVO
         profesional = prof_repo.obtener_por_id(data.profesional_id)
         if not profesional:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Profesional con ID {data.profesional_id} no encontrado",
             )
+        policies.validar_profesional_disponible(db, data.profesional_id)
 
-        # Validar que el paciente existe
+        # POLICY 2: Validar que el paciente existe y pertenece al solicitante
         paciente = pac_repo.obtener_por_id(data.paciente_id)
         if not paciente:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Paciente con ID {data.paciente_id} no encontrado",
             )
+
+        # POLICY 3: Validar que el solicitante que crea la cita es el dueño del paciente
+        policies.validar_solicitante_es_dueno(
+            db, data.paciente_id, data.solicitante_id
+        )
+
+        # POLICY 4: Validar que el solicitante está activo
+        policies.validar_usuario_activo(db, data.solicitante_id)
+
+        # VALIDACIONES DE NEGOCIO
+        # Validación 1: Hora fin debe ser posterior a hora inicio
+        if data.hora_fin <= data.hora_inicio:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La hora de fin debe ser posterior a la hora de inicio",
+            )
+
+        # Validación 2: No permitir citas en fechas pasadas
+        if data.fecha < date.today():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No se pueden crear consultas en fechas pasadas",
+            )
+
+        # Validación 3: Verificar disponibilidad (anti-double booking)
+        consultas_existentes = repo.listar_por_profesional(
+            profesional_id=data.profesional_id,
+            desde=data.fecha,
+            hasta=data.fecha,
+            solo_activas=True,
+        )
+
+        for c in consultas_existentes:
+            # Detectar solapamiento de horarios
+            if (data.hora_inicio < c.hora_fin) and (
+                data.hora_fin > c.hora_inicio
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El profesional no está disponible en el horario seleccionado",
+                )
 
         # Crear ubicación
         ubicacion = Ubicacion(
@@ -83,12 +138,10 @@ def crear_consulta(
             notas="",
         )
 
-        # Guardar en el repositorio (necesitamos direccion_id)
-        # TODO: Crear dirección desde ubicación
+        # Guardar en el repositorio (crear dirección desde ubicación)
         from app.infra.repositories.direccion_repository import (
             DireccionRepository,
         )
-        from app.api.dependencies import get_db
 
         # Por ahora, usar la dirección del profesional
         cita_creada = repo.crear(
@@ -99,6 +152,16 @@ def crear_consulta(
                 else None
             ),
         )
+
+        # PUBLICAR EVENTO: CitaCreada
+        # El EventBus notificará automáticamente a todos los observadores
+        evento = CitaCreada(
+            cita_id=cita_creada.id,
+            profesional_id=data.profesional_id,
+            paciente_id=data.paciente_id,
+            solicitante_id=data.solicitante_id,
+        )
+        event_bus.publicar(evento)
 
         return cita_creada
 

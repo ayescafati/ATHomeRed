@@ -35,17 +35,19 @@ def test_connection():
 
         # Intentar conectar
         print("\n🔌 Intentando conectar...")
+        from sqlalchemy import text
+
         with ENGINE.connect() as conn:
-            result = conn.execute("SELECT 1")
-            print(" Conexión exitosa!")
+            result = conn.execute(text("SELECT 1"))
+            print(" ✅ Conexión exitosa!")
 
             # Obtener información de la BD
             if "postgresql" in str(DATABASE_URL):
-                result = conn.execute("SELECT version()")
+                result = conn.execute(text("SELECT version()"))
                 version = result.fetchone()[0]
                 print(f"\n PostgreSQL: {version[:50]}...")
             elif "sqlite" in str(DATABASE_URL):
-                result = conn.execute("SELECT sqlite_version()")
+                result = conn.execute(text("SELECT sqlite_version()"))
                 version = result.fetchone()[0]
                 print(f"\n SQLite versión: {version}")
 

@@ -15,6 +15,7 @@ from app.api.dependencies import (
     get_valoracion_repository,
     get_profesional_repository,
     get_paciente_repository,
+    get_current_user,
 )
 from app.infra.repositories.valoracion_repository import ValoracionRepository
 from app.infra.repositories.profesional_repository import ProfesionalRepository
@@ -166,18 +167,37 @@ def obtener_valoracion(
 def eliminar_valoracion(
     valoracion_id: UUID,
     repo: ValoracionRepository = Depends(get_valoracion_repository),
+    current_user=Depends(get_current_user),  # ✅ Autenticación implementada
 ):
     """
     Elimina una valoración.
-    Solo el paciente que creó la valoración debería poder eliminarla.
-    TODO: Agregar validación de permisos.
+
+    Solo el paciente que creó la valoración puede eliminarla.
+    Requiere autenticación (Bearer token).
     """
+    # Validar que la valoración existe
+    valoracion = repo.obtener_por_id(valoracion_id)
+
+    if not valoracion:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Valoración con ID {valoracion_id} no encontrada",
+        )
+
+    # ✅ Validar permisos: solo el dueño puede eliminar
+    if valoracion.id_paciente != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para eliminar esta valoración",
+        )
+
+    # Eliminar
     exito = repo.eliminar(valoracion_id)
 
     if not exito:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Valoración con ID {valoracion_id} no encontrada",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error al eliminar la valoración",
         )
 
     return None

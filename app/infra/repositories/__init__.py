@@ -3,8 +3,8 @@ from .consulta_repository import ConsultaRepository
 from .paciente_repository import PacienteRepository
 from .direccion_repository import DireccionRepository
 from .valoracion_repository import ValoracionRepository
-from .auth_repository import AuthRepository
 from .usuario_repository import UsuarioRepository
+from .catalogo_repository import CatalogoRepository
 
 __all__ = [
     "ProfesionalRepository",
@@ -12,6 +12,6 @@ __all__ = [
     "PacienteRepository",
     "DireccionRepository",
     "ValoracionRepository",
-    "AuthRepository",
     "UsuarioRepository",
+    "CatalogoRepository",
 ]

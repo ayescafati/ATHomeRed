@@ -82,3 +82,11 @@ build/
 dist/
 *.egg-info/
 .venv
+
+#
+*.md
+*.db
+*.ps1
+*.bat
+*.exe
+*.log

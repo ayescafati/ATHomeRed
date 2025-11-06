@@ -584,6 +584,11 @@ def downgrade() -> None:
         "ix_departamento_provincia", table_name="departamento", schema="athome"
     )
     op.drop_table("departamento", schema="athome")
+    # Drop refresh_tokens first (depends on usuario)
+    op.drop_table("refresh_tokens", schema="athome")
+    # Drop auditoria_login next
+    op.drop_table("auditoria_login", schema="athome")
+    # Now drop usuario
     op.drop_table("usuario", schema="athome")
     op.drop_table("relacion_solicitante", schema="athome")
     op.drop_table("provincia", schema="athome")

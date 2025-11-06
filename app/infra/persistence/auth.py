@@ -4,13 +4,15 @@ Modelos ORM para autenticación y auditoría.
 
 from sqlalchemy import (
     Column,
-    Integer,
     String,
     DateTime,
     Boolean,
     ForeignKey,
     Text,
+    text,
+    Integer,
 )
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .base import Base, SCHEMA
@@ -22,9 +24,17 @@ class RefreshTokenORM(Base):
     __tablename__ = "refresh_tokens"
     __table_args__ = {"schema": SCHEMA}
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+        index=True,
+    )
     usuario_id = Column(
-        Integer, ForeignKey(f"{SCHEMA}.usuario.id"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey(f"{SCHEMA}.usuario.id"),
+        nullable=False,
+        index=True,
     )
     token = Column(String(500), unique=True, nullable=False, index=True)
     expira_en = Column(DateTime, nullable=False)

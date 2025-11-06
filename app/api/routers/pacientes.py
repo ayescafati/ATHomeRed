@@ -5,9 +5,11 @@ Router para gestión de pacientes
 from typing import List
 from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
 from app.api.schemas import PacienteCreate, PacienteResponse
-from app.api.dependencies import get_paciente_repository
+from app.api.dependencies import get_paciente_repository, get_db
+from app.api.policies import IntegrityPolicies
 from app.infra.repositories.paciente_repository import PacienteRepository
 from app.domain.entities.usuarios import Paciente
 from app.domain.value_objects.objetos_valor import Ubicacion
@@ -21,14 +23,23 @@ router = APIRouter()
 def crear_paciente(
     data: PacienteCreate,
     repo: PacienteRepository = Depends(get_paciente_repository),
+    db: Session = Depends(get_db),
 ):
     """
     Crea un nuevo paciente en el sistema.
+
+    **POLICY APLICADA:**
+    - El solicitante que crea el paciente debe estar ACTIVO
 
     El paciente estará asociado a un solicitante (usuario que gestiona sus turnos).
     El email/celular de contacto se obtienen del solicitante.
     """
     try:
+        policies = IntegrityPolicies()
+
+        # POLICY: Validar que el solicitante está activo
+        policies.validar_usuario_activo(db, data.solicitante_id)
+
         # Convertir schema a entidad de dominio
         ubicacion = Ubicacion(
             provincia=data.ubicacion.provincia,

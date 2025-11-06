@@ -1,0 +1,57 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: athome-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../.env
+    environment:
+      # Conexión a Supabase PostgreSQL - Usa variables del .env
+      DB_DIALECT: ${DB_DIALECT:-postgresql}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-postgres}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SSLMODE: ${DB_SSLMODE:-require}
+      
+      # JWT Secret
+      AT_HOME_RED_SECRET: ${AT_HOME_RED_SECRET}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      
+      # Debug (opcional)
+      DB_DEBUG: ${DB_DEBUG:-0}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # OPCIONAL: Postgres local para desarrollo/testing
+  # Descomenta si quieres tener una BD local para pruebas
+  # postgres:
+  #   image: postgres:15
+  #   container_name: athome-postgres-local
+  #   environment:
+  #     POSTGRES_DB: athomedb
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #   ports:
+  #     - "5433:5432"  # Puerto 5433 para no chocar con otros postgres
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U postgres -d athomedb"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 10
+
+# volumes:
+#   pgdata:

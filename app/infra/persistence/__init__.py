@@ -1,6 +1,7 @@
 from .base import Base, metadata
 from .ubicacion import ProvinciaORM, DepartamentoORM, BarrioORM, DireccionORM
 from .usuarios import UsuarioORM
+from .auth import RefreshTokenORM
 from .perfiles import ProfesionalORM, SolicitanteORM
 from .paciente import PacienteORM
 from .relaciones import RelacionSolicitanteORM
@@ -23,6 +24,7 @@ __all__ = [
     "BarrioORM",
     "DireccionORM",
     "UsuarioORM",
+    "RefreshTokenORM",
     "ProfesionalORM",
     "SolicitanteORM",
     "PacienteORM",

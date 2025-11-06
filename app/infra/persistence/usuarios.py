@@ -1,6 +1,6 @@
 from __future__ import annotations
 import uuid
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from sqlalchemy import (
     UniqueConstraint,
@@ -13,6 +13,9 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID, VARCHAR as Varchar
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base, SCHEMA
+
+if TYPE_CHECKING:
+    from .auth import RefreshTokenORM
 
 
 class UsuarioORM(Base):
