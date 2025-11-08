@@ -2,17 +2,20 @@
 Pydantic schemas para validación de requests/responses
 Estos son los DTOs (Data Transfer Objects) de la API
 """
+
 from datetime import date, time, datetime
 from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
 
 
 # Value Objects Schemas
 
+
 class UbicacionSchema(BaseModel):
     """Schema para ubicación"""
+
     provincia: str
     departamento: str
     barrio: str
@@ -21,44 +24,47 @@ class UbicacionSchema(BaseModel):
     latitud: Optional[float] = None
     longitud: Optional[float] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DisponibilidadSchema(BaseModel):
     """Schema para disponibilidad horaria"""
-    dias_semana: List[int] = Field(description="Lista de días (0=Lunes, 6=Domingo)")
+
+    dias_semana: List[int] = Field(
+        description="Lista de días (0=Lunes, 6=Domingo)"
+    )
     hora_inicio: time
     hora_fin: time
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MatriculaSchema(BaseModel):
     """Schema para matrícula profesional"""
+
     numero: str
     provincia: str
     vigente_desde: date
     vigente_hasta: Optional[date] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Entities Schemas
 
+
 class EspecialidadSchema(BaseModel):
     """Schema para especialidad médica"""
+
     id: int
     nombre: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UsuarioBase(BaseModel):
     """Schema base para usuarios"""
+
     nombre: str = Field(min_length=2, max_length=50)
     apellido: str = Field(min_length=2, max_length=50)
     email: EmailStr
@@ -67,14 +73,16 @@ class UsuarioBase(BaseModel):
 
 class ProfesionalCreate(UsuarioBase):
     """Schema para crear un profesional"""
+
     ubicacion: UbicacionSchema
     especialidades: List[int] = Field(description="IDs de especialidades")
-    disponibilidades: Optional[List[DisponibilidadSchema]] = []
-    matriculas: Optional[List[MatriculaSchema]] = []
+    disponibilidades: Optional[List[DisponibilidadSchema]] = None
+    matriculas: Optional[List[MatriculaSchema]] = None
 
 
 class ProfesionalResponse(UsuarioBase):
     """Schema para respuesta de profesional"""
+
     id: UUID
     ubicacion: UbicacionSchema
     activo: bool
@@ -83,27 +91,33 @@ class ProfesionalResponse(UsuarioBase):
     disponibilidades: List[DisponibilidadSchema]
     matriculas: List[MatriculaSchema]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProfesionalUpdate(BaseModel):
     """Schema para actualizar profesional"""
+
     nombre: Optional[str] = None
     apellido: Optional[str] = None
     celular: Optional[str] = None
     ubicacion: Optional[UbicacionSchema] = None
+    especialidades: Optional[List[int]] = None
     disponibilidades: Optional[List[DisponibilidadSchema]] = None
 
 
 # Paciente Schemas
 
+
 class PacienteCreate(BaseModel):
     """Schema para crear paciente (sin email/celular - los tiene el Solicitante)"""
+
     nombre: str = Field(min_length=2, max_length=50)
     apellido: str = Field(min_length=2, max_length=50)
     fecha_nacimiento: date
-    relacion: str = Field(default="self", description="Relación con el solicitante: self, hijo/a, padre/madre, tutor/a")
+    relacion: str = Field(
+        default="self",
+        description="Relación con el solicitante: self, hijo/a, padre/madre, tutor/a",
+    )
     notas: Optional[str] = None
     ubicacion: UbicacionSchema
     solicitante_id: UUID  # Requerido: el usuario que gestiona los turnos
@@ -111,6 +125,7 @@ class PacienteCreate(BaseModel):
 
 class PacienteResponse(BaseModel):
     """Schema para respuesta de paciente"""
+
     id: UUID
     nombre: str
     apellido: str
@@ -124,24 +139,29 @@ class PacienteResponse(BaseModel):
     def edad(self) -> int:
         today = date.today()
         years = today.year - self.fecha_nacimiento.year
-        if (today.month, today.day) < (self.fecha_nacimiento.month, self.fecha_nacimiento.day):
+        if (today.month, today.day) < (
+            self.fecha_nacimiento.month,
+            self.fecha_nacimiento.day,
+        ):
             years -= 1
         return years
-    
+
     @property
     def nombre_completo(self) -> str:
         return f"{self.nombre} {self.apellido}".strip()
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Consulta/Cita Schemas
 
+
 class ConsultaCreate(BaseModel):
     """Schema para crear una consulta"""
+
     profesional_id: UUID
     paciente_id: UUID
+    solicitante_id: UUID  # Requerido para validación de policies
     fecha: date
     hora_inicio: time
     hora_fin: time
@@ -151,6 +171,7 @@ class ConsultaCreate(BaseModel):
 
 class ConsultaResponse(BaseModel):
     """Schema para respuesta de consulta"""
+
     id: UUID
     profesional_id: UUID
     paciente_id: UUID
@@ -163,12 +184,12 @@ class ConsultaResponse(BaseModel):
     notas: Optional[str]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ConsultaUpdate(BaseModel):
     """Schema para actualizar consulta"""
+
     fecha: Optional[date] = None
     hora_inicio: Optional[time] = None
     hora_fin: Optional[time] = None
@@ -176,20 +197,24 @@ class ConsultaUpdate(BaseModel):
     notas: Optional[str] = None
 
 
-# Búsqueda Schemas
-
 class BusquedaProfesionalRequest(BaseModel):
     """Schema para búsqueda de profesionales"""
+
     especialidad_id: Optional[int] = None
+    nombre_especialidad: Optional[str] = None
     provincia: Optional[str] = None
     departamento: Optional[str] = None
-    dia_semana: Optional[int] = Field(None, ge=0, le=6, description="0=Lunes, 6=Domingo")
+    barrio: Optional[str] = None
+    dia_semana: Optional[int] = Field(
+        None, ge=0, le=6, description="0=Lunes, 6=Domingo"
+    )
     solo_verificados: bool = True
     solo_activos: bool = True
 
 
 class BusquedaProfesionalResponse(BaseModel):
     """Schema para resultado de búsqueda"""
+
     profesionales: List[ProfesionalResponse]
     total: int
     criterios_aplicados: dict
@@ -197,16 +222,21 @@ class BusquedaProfesionalResponse(BaseModel):
 
 # Valoración Schemas
 
+
 class ValoracionCreate(BaseModel):
     """Schema para crear valoración"""
+
     profesional_id: UUID
     paciente_id: UUID
-    puntuacion: int = Field(ge=1, le=5, description="Puntuación de 1 a 5 estrellas")
+    puntuacion: int = Field(
+        ge=1, le=5, description="Puntuación de 1 a 5 estrellas"
+    )
     comentario: Optional[str] = Field(None, max_length=500)
 
 
 class ValoracionResponse(BaseModel):
     """Schema para respuesta de valoración"""
+
     id: UUID
     profesional_id: UUID
     paciente_id: UUID
@@ -214,33 +244,34 @@ class ValoracionResponse(BaseModel):
     comentario: Optional[str]
     fecha: date
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PromedioValoracionResponse(BaseModel):
     """Schema para promedio de valoraciones de un profesional"""
+
     profesional_id: UUID
     promedio: float
     total_valoraciones: int
 
 
-# Auth Schemas (TODO)
-
 class TokenSchema(BaseModel):
     """Schema para token de autenticación"""
+
     access_token: str
     token_type: str = "bearer"
 
 
 class LoginRequest(BaseModel):
     """Schema para login"""
+
     email: EmailStr
     password: str
 
 
 class RegisterRequest(UsuarioBase):
     """Schema para registro"""
+
     password: str = Field(min_length=8)
     es_profesional: bool = False
     es_solicitante: bool = True

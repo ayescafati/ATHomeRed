@@ -8,7 +8,9 @@ from sqlalchemy.dialects.postgresql import UUID, VARCHAR as Varchar
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, SCHEMA
-from .servicios import profesional_especialidad  # tabla puente profesional<->especialidad
+from .servicios import (
+    profesional_especialidad,
+)  # tabla puente profesional<->especialidad
 
 if TYPE_CHECKING:
     from .usuarios import UsuarioORM
@@ -49,11 +51,17 @@ class ProfesionalORM(Base):
     )
 
     # Atributos de estado
-    activo: Mapped[bool] = mapped_column(nullable=False, server_default=text("true"))
-    verificado: Mapped[bool] = mapped_column(nullable=False, server_default=text("false"))
+    activo: Mapped[bool] = mapped_column(
+        nullable=False, server_default=text("true")
+    )
+    verificado: Mapped[bool] = mapped_column(
+        nullable=False, server_default=text("false")
+    )
 
     # Campo libre/legacy si necesitás almacenar un número simple además del esquema de Matricula
-    matricula: Mapped[Optional[str]] = mapped_column(Varchar(50), nullable=True)
+    matricula: Mapped[Optional[str]] = mapped_column(
+        Varchar(50), nullable=True
+    )
 
     # Relaciones principales
     usuario: Mapped["UsuarioORM"] = relationship("UsuarioORM")
@@ -131,7 +139,9 @@ class SolicitanteORM(Base):
     )
 
     # Estado
-    activo: Mapped[bool] = mapped_column(nullable=False, server_default=text("true"))
+    activo: Mapped[bool] = mapped_column(
+        nullable=False, server_default=text("true")
+    )
 
     # Relaciones
     usuario: Mapped["UsuarioORM"] = relationship("UsuarioORM")

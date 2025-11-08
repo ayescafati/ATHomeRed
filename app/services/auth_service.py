@@ -25,7 +25,9 @@ ALGORITHM = "HS256"
 SECRET_KEY = os.getenv("AT_HOME_RED_SECRET", "dev-secret-change-me")
 
 # Definimos un TTL corto para el access token (en minutos).
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+ACCESS_TOKEN_EXPIRE_MINUTES = int(
+    os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
+)
 
 # Optamos por Argon2 para evitar líos de bcrypt en algunos Windows.
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -84,7 +86,7 @@ class AuthService:
         except JWTError:
             return None
 
-    # REGISTRO 
+    # REGISTRO
 
     def registrar_usuario(
         self,
@@ -134,21 +136,29 @@ class AuthService:
             "roles": [
                 r
                 for r, active in (
-                    ("profesional", bool(getattr(usuario, "es_profesional", False))),
-                    ("solicitante", bool(getattr(usuario, "es_solicitante", False))),
+                    (
+                        "profesional",
+                        bool(getattr(usuario, "es_profesional", False)),
+                    ),
+                    (
+                        "solicitante",
+                        bool(getattr(usuario, "es_solicitante", False)),
+                    ),
                 )
                 if active
             ],
         }
 
-    # LOGIN 
+    # LOGIN
 
     def login(
         self,
         email: str,
         password: str,
-        ip_address: Optional[str] = None,   # Lo reservamos para auditoría/rate-limit.
-        user_agent: Optional[str] = None,   # Ídem: nos sirve para trazabilidad.
+        ip_address: Optional[
+            str
+        ] = None,  # Lo reservamos para auditoría/rate-limit.
+        user_agent: Optional[str] = None,  # Ídem: nos sirve para trazabilidad.
     ) -> dict:
         """Autenticamos y devolvemos {access_token, token_type} cuando todo sale bien."""
         # Si el usuario está temporalmente bloqueado, cortamos el flujo.
@@ -185,7 +195,11 @@ class AuthService:
             roles.append("solicitante")
 
         access_token = self.crear_access_token(
-            data={"sub": str(usuario.id), "email": usuario.email, "roles": roles},
+            data={
+                "sub": str(usuario.id),
+                "email": usuario.email,
+                "roles": roles,
+            },
             expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
         )
 
@@ -193,15 +207,13 @@ class AuthService:
 
     # LOGOUT / REFRESH (stubs)
 
-    def logout(self, refresh_token: str) -> bool:  
+    def logout(self, refresh_token: str) -> bool:
         """Dejamos asentado que esto va como stub hasta implementar refresh tokens."""
         raise NotImplementedError(
             "Logout/refresh no implementados en esta versión mínima"
         )
 
-    def refresh_access_token(  
-        self, refresh_token: str
-    ) -> dict:
+    def refresh_access_token(self, refresh_token: str) -> dict:
         """Mantenemos el stub de refresh para una versión futura."""
         raise NotImplementedError(
             "Logout/refresh no implementados en esta versión mínima"

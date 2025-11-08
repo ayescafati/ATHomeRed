@@ -2,17 +2,31 @@
 Router para búsqueda de profesionales
 Implementa las estrategias de búsqueda del dominio
 """
-from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from uuid import UUID
 
 from app.api.schemas import (
     BusquedaProfesionalRequest,
     BusquedaProfesionalResponse,
-    ProfesionalResponse
+    ProfesionalResponse,
 )
-from app.api.dependencies import get_profesional_repository
+from app.api.dependencies import (
+    get_profesional_repository,
+    get_direccion_repository,
+    get_catalogo_repository,
+)
 from app.infra.repositories.profesional_repository import ProfesionalRepository
-from app.domain.strategies.buscador import BuscadorProfesionales
+from app.infra.repositories.direccion_repository import DireccionRepository
+from app.infra.repositories.catalogo_repository import CatalogoRepository
+
+from app.domain.entities.catalogo import FiltroBusqueda
+from app.domain.strategies.buscador import Buscador
+from app.domain.strategies.estrategia import (
+    BusquedaPorZona,
+    BusquedaPorEspecialidad,
+    BusquedaCombinada,
+)
 
 router = APIRouter()
 
@@ -20,80 +34,167 @@ router = APIRouter()
 @router.post("/profesionales", response_model=BusquedaProfesionalResponse)
 def buscar_profesionales(
     criterios: BusquedaProfesionalRequest,
-    repo: ProfesionalRepository = Depends(get_profesional_repository)
+    repo: ProfesionalRepository = Depends(get_profesional_repository),
+    catalogo_repo: CatalogoRepository = Depends(get_catalogo_repository),
 ):
     """
     Busca profesionales según múltiples criterios.
-    
+
     Utiliza el patrón Strategy del dominio para aplicar filtros:
-    - Por especialidad
-    - Por ubicación (provincia/departamento)
+    - Por especialidad (ID o nombre - se valida que exista)
+    - Por ubicación (provincia/departamento/barrio)
     - Por disponibilidad (día de la semana)
     - Solo verificados/activos
     """
+
     try:
-        # Obtener todos los profesionales según filtros básicos
-        profesionales = repo.listar_activos() if criterios.solo_activos else []
-        
-        # TODO: Implementar BuscadorProfesionales del dominio
-        # buscador = BuscadorProfesionales()
-        # resultados = buscador.buscar(profesionales, criterios)
-        
-        criterios_aplicados = {
-            "especialidad_id": criterios.especialidad_id,
-            "provincia": criterios.provincia,
-            "departamento": criterios.departamento,
-            "dia_semana": criterios.dia_semana,
-            "solo_verificados": criterios.solo_verificados,
-            "solo_activos": criterios.solo_activos
-        }
-        
-        # Filtrar solo verificados si se solicita
-        if criterios.solo_verificados:
-            profesionales = [p for p in profesionales if p.verificado]
-        
+        # Si viene nombre de especialidad sin ID, intentar resolverlo
+        especialidad_id = criterios.especialidad_id
+        especialidad_nombre = criterios.nombre_especialidad
+
+        if especialidad_nombre and not especialidad_id:
+            # Resolver nombre → ID usando el catálogo
+            especialidad = catalogo_repo.obtener_especialidad_por_nombre(
+                especialidad_nombre
+            )
+            if especialidad:
+                especialidad_id = especialidad.id
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"No se encontró la especialidad '{especialidad_nombre}'",
+                )
+
+        # Si viene ID, validar que existe
+        if especialidad_id:
+            especialidad = catalogo_repo.obtener_especialidad_por_id(
+                especialidad_id
+            )
+            if not especialidad:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"No existe la especialidad con ID {especialidad_id}",
+                )
+            # Actualizar el nombre para usar en el filtro
+            especialidad_nombre = especialidad.nombre
+
+        filtro = FiltroBusqueda(
+            id_especialidad=especialidad_id,
+            nombre_especialidad=especialidad_nombre,
+            provincia=criterios.provincia,
+            departamento=criterios.departamento,
+            barrio=criterios.barrio,
+        )
+
+        if (filtro.id_especialidad or filtro.nombre_especialidad) and (
+            filtro.provincia or filtro.departamento or filtro.barrio
+        ):
+            estrategia = BusquedaCombinada()
+        elif filtro.id_especialidad or filtro.nombre_especialidad:
+            estrategia = BusquedaPorEspecialidad()
+        elif filtro.provincia or filtro.departamento or filtro.barrio:
+            estrategia = BusquedaPorZona()
+
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Se debe especificar un criterio de búsqueda válido.",
+            )
+
+        buscador = Buscador(repo, estrategia)
+        profesionales = buscador.buscar(filtro)
+
         return BusquedaProfesionalResponse(
             profesionales=profesionales,
             total=len(profesionales),
-            criterios_aplicados=criterios_aplicados
+            criterios_aplicados=filtro.__dict__,
         )
-        
+
+    except ValueError as ve:
+        # Errores de validación de filtros (de las estrategias)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve)
+        )
     except Exception as e:
+        # Otros errores inesperados
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error en búsqueda: {str(e)}"
+            detail=f"Error en búsqueda: {str(e)}",
         )
 
 
 @router.get("/especialidades")
-def listar_especialidades():
+def listar_especialidades(
+    repo: CatalogoRepository = Depends(get_catalogo_repository),
+):
     """
-    Lista todas las especialidades disponibles.
+    Lista todas las especialidades disponibles desde la base de datos.
     """
-    # TODO: Implementar con repositorio de catálogo
+    especialidades = repo.listar_especialidades()
     return {
         "especialidades": [
-            {"id": 1, "nombre": "Acompañamiento Terapéutico"},
-            {"id": 2, "nombre": "Enfermería"},
-            {"id": 3, "nombre": "Enfermería"},
-            {"id": 4, "nombre": "Acompañamiento Terapéutico"},
-            {"id": 5, "nombre": "Acompañamiento Terapéutico"},
+            {"id": esp.id, "nombre": esp.nombre} for esp in especialidades
         ]
     }
 
 
 @router.get("/ubicaciones/provincias")
-def listar_provincias():
+def listar_provincias(
+    repo: DireccionRepository = Depends(get_direccion_repository),
+):
     """
-    Lista todas las provincias disponibles.
+    Lista todas las provincias disponibles desde la base de datos.
     """
-    # TODO: Implementar con repositorio de catálogo
+    provincias = repo.listar_provincias()
     return {
         "provincias": [
-            "Buenos Aires",
-            "Córdoba",
-            "Santa Fe",
-            "Mendoza",
-            "Tucumán"
+            {"id": str(provincia.id), "nombre": provincia.nombre}
+            for provincia in provincias
         ]
     }
+
+
+@router.get("/ubicaciones/provincias/{provincia_id}/departamentos")
+def listar_departamentos(
+    provincia_id: UUID,
+    repo: DireccionRepository = Depends(get_direccion_repository),
+):
+    """
+    Lista todos los departamentos de una provincia específica.
+    """
+    try:
+        departamentos = repo.listar_departamentos(provincia_id)
+        return {
+            "departamentos": [
+                {"id": str(depto.id), "nombre": depto.nombre}
+                for depto in departamentos
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al listar departamentos: {str(e)}",
+        )
+
+
+@router.get("/ubicaciones/departamentos/{departamento_id}/barrios")
+def listar_barrios(
+    departamento_id: UUID,
+    repo: DireccionRepository = Depends(get_direccion_repository),
+):
+    """
+    Lista todos los barrios de un departamento específico.
+    """
+    try:
+        barrios = repo.listar_barrios(departamento_id)
+        return {
+            "barrios": [
+                {"id": str(barrio.id), "nombre": barrio.nombre}
+                for barrio in barrios
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al listar barrios: {str(e)}",
+        )

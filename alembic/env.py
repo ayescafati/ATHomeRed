@@ -1,8 +1,9 @@
 """
 Alembic environment configuration
 """
+
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool, text
+from sqlalchemy import engine_from_config, pool
 from alembic import context
 import os
 import sys
@@ -25,7 +26,7 @@ from app.infra.persistence import (
     publicaciones,
     relaciones,
     paciente,
-    valoraciones
+    valoraciones,
 )
 
 # This is the Alembic Config object
@@ -33,8 +34,8 @@ config = context.config
 
 # Override sqlalchemy.url with our DATABASE_URL
 # Escapar % en la URL para evitar problemas con interpolación de .ini
-database_url_escaped = DATABASE_URL.replace('%', '%%')
-config.set_main_option('sqlalchemy.url', database_url_escaped)
+database_url_escaped = DATABASE_URL.replace("%", "%%")
+config.set_main_option("sqlalchemy.url", database_url_escaped)
 
 # Interpret the config file for Python logging
 if config.config_file_name is not None:
@@ -47,7 +48,7 @@ target_metadata = Base.metadata
 def run_migrations_offline() -> None:
     """
     Run migrations in 'offline' mode.
-    
+
     This configures the context with just a URL
     and not an Engine, though an Engine is acceptable
     here as well. By skipping the Engine creation
@@ -62,9 +63,11 @@ def run_migrations_offline() -> None:
         # Include only athome schema
         include_schemas=True,
         include_object=lambda obj, name, type_, reflected, compare_to: (
-            obj.schema == 'athome' if hasattr(obj, 'schema') else True
+            obj.schema == "athome" if hasattr(obj, "schema") else True
         ),
-        version_table_schema=target_metadata.schema if target_metadata.schema else None
+        version_table_schema=(
+            target_metadata.schema if target_metadata.schema else None
+        ),
     )
 
     with context.begin_transaction():
@@ -74,7 +77,7 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     """
     Run migrations in 'online' mode.
-    
+
     In this scenario we need to create an Engine
     and associate a connection with the context.
     """
@@ -85,24 +88,17 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        # Ensure schema and extension exist when using PostgreSQL
-        try:
-            url = str(connectable.engine.url)
-            if url.startswith("postgresql"):
-                connection.execute(text("CREATE SCHEMA IF NOT EXISTS athome"))
-                connection.execute(text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
-        except Exception:
-            # Don't fail migrations if extension creation isn't permitted; gen_random_uuid must exist though
-            pass
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
             # Include only athome schema
             include_schemas=True,
             include_object=lambda obj, name, type_, reflected, compare_to: (
-                obj.schema == 'athome' if hasattr(obj, 'schema') else True
+                obj.schema == "athome" if hasattr(obj, "schema") else True
             ),
-            version_table_schema=target_metadata.schema if target_metadata.schema else None
+            version_table_schema=(
+                target_metadata.schema if target_metadata.schema else None
+            ),
         )
 
         with context.begin_transaction():
