@@ -31,4 +31,3 @@ class MatriculaProvinciaStrategy(AsignacionStrategy):
 # class MatriculaProvinciaStrategy(AsignacionStrategy):
 #     def validar(self, cita: "Consulta", profesional: "Profesional") -> bool:
 #         pass
-
