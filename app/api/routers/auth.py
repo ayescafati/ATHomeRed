@@ -9,7 +9,7 @@ from app.api.dependencies import get_db
 from app.services.auth_service import AuthService
 from app.infra.repositories.usuario_repository import UsuarioRepository
 
-router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+router = APIRouter(prefix="/api/v1/auth", tags=["Autenticación"])
 
 
 @router.post("/register-json", status_code=status.HTTP_201_CREATED)
