@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List, Optional
 from uuid import UUID
 from datetime import date
@@ -139,8 +140,6 @@ class ValoracionRepository:
         Returns:
             Promedio de puntuaciones (0.0 si no hay valoraciones)
         """
-        from sqlalchemy import func
-
         resultado = (
             self.session.query(func.avg(ValoracionORM.puntuacion))
             .filter(ValoracionORM.profesional_id == profesional_id)

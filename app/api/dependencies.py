@@ -15,7 +15,10 @@ from app.infra.repositories.usuario_repository import UsuarioRepository
 from app.infra.repositories.direccion_repository import DireccionRepository
 from app.infra.repositories.catalogo_repository import CatalogoRepository
 from app.services.auth_service import AuthService
+from app.api.policies import IntegrityPolicies
 
+from fastapi.security import OAuth2PasswordBearer
+from typing import Optional
 
 # Database Session
 
@@ -82,15 +85,12 @@ def get_catalogo_repository(
 
 def get_integrity_policies():
     """Dependency para acceder a las políticas de integridad"""
-    from app.api.policies import IntegrityPolicies
-
     return IntegrityPolicies
 
 
 # Authentication & Authorization
 
-from fastapi.security import OAuth2PasswordBearer
-from typing import Optional
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 

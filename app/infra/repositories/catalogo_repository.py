@@ -22,7 +22,7 @@ from app.infra.persistence.publicaciones import PublicacionORM
 class CatalogoRepository:
     """
     Repositorio para gestionar especialidades, publicaciones y tarifas.
-
+    
     Permite:
     - Listar y buscar especialidades
     - Crear y consultar publicaciones de profesionales
@@ -32,13 +32,14 @@ class CatalogoRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    # =====================
     # CONVERSIÓN ORM ↔ DOMINIO
-    # =====================
 
     def _especialidad_to_domain(self, orm: EspecialidadORM) -> Especialidad:
         """Convierte EspecialidadORM a Especialidad del dominio"""
-        return Especialidad(id=orm.id_especialidad, nombre=orm.nombre)
+        return Especialidad(
+            id=orm.id_especialidad,
+            nombre=orm.nombre
+        )
 
     def _publicacion_to_domain(self, orm: PublicacionORM) -> Publicacion:
         """Convierte PublicacionORM a Publicacion del dominio"""
@@ -47,17 +48,15 @@ class CatalogoRepository:
             id_profesional=str(orm.profesional_id),
             titulo=orm.titulo,
             descripcion=orm.descripcion,
-            especialidades=[self._especialidad_to_domain(orm.especialidad)],
+            especialidades=[self._especialidad_to_domain(orm.especialidad)]
         )
 
-    # =====================
     # ESPECIALIDADES
-    # =====================
 
     def listar_especialidades(self) -> List[Especialidad]:
         """
         Lista todas las especialidades disponibles ordenadas alfabéticamente.
-
+        
         Returns:
             Lista de especialidades del dominio
         """
@@ -71,10 +70,10 @@ class CatalogoRepository:
     def obtener_especialidad_por_id(self, id: int) -> Optional[Especialidad]:
         """
         Busca una especialidad por su ID.
-
+        
         Args:
             id: ID de la especialidad
-
+            
         Returns:
             Especialidad del dominio o None si no existe
         """
@@ -85,15 +84,13 @@ class CatalogoRepository:
         )
         return self._especialidad_to_domain(orm) if orm else None
 
-    def obtener_especialidad_por_nombre(
-        self, nombre: str
-    ) -> Optional[Especialidad]:
+    def obtener_especialidad_por_nombre(self, nombre: str) -> Optional[Especialidad]:
         """
         Busca una especialidad por su nombre (case-insensitive).
-
+        
         Args:
             nombre: Nombre de la especialidad
-
+            
         Returns:
             Especialidad del dominio o None si no existe
         """
@@ -105,53 +102,53 @@ class CatalogoRepository:
         return self._especialidad_to_domain(orm) if orm else None
 
     def crear_especialidad(
-        self, nombre: str, descripcion: str, tarifa: Decimal
+        self, 
+        nombre: str, 
+        descripcion: str, 
+        tarifa: Decimal
     ) -> Especialidad:
         """
         Crea una nueva especialidad.
-
+        
         Args:
             nombre: Nombre de la especialidad
             descripcion: Descripción detallada
             tarifa: Tarifa base para la especialidad
-
+            
         Returns:
             Especialidad creada
-
+            
         Raises:
             ValueError: Si ya existe una especialidad con ese nombre
         """
         # Verificar si ya existe
         existente = self.obtener_especialidad_por_nombre(nombre)
         if existente:
-            raise ValueError(
-                f"Ya existe una especialidad con el nombre '{nombre}'"
-            )
+            raise ValueError(f"Ya existe una especialidad con el nombre '{nombre}'")
 
         # Crear nueva
         orm = EspecialidadORM(
             nombre=nombre.strip().title(),
             descripcion=descripcion.strip(),
-            tarifa=tarifa,
+            tarifa=tarifa
         )
         self.session.add(orm)
         self.session.flush()
 
         return self._especialidad_to_domain(orm)
 
-    # =====================
     # PUBLICACIONES
-    # =====================
 
     def listar_publicaciones_por_profesional(
-        self, profesional_id: UUID
+        self, 
+        profesional_id: UUID
     ) -> List[Publicacion]:
         """
         Lista todas las publicaciones de un profesional.
-
+        
         Args:
             profesional_id: UUID del profesional
-
+            
         Returns:
             Lista de publicaciones del dominio
         """
@@ -166,10 +163,10 @@ class CatalogoRepository:
     def obtener_publicacion_por_id(self, id: UUID) -> Optional[Publicacion]:
         """
         Busca una publicación por su ID.
-
+        
         Args:
             id: UUID de la publicación
-
+            
         Returns:
             Publicacion del dominio o None si no existe
         """
@@ -186,30 +183,28 @@ class CatalogoRepository:
         especialidad_id: int,
         titulo: str,
         descripcion: str,
-        fecha_publicacion: Optional[date] = None,
+        fecha_publicacion: Optional[date] = None
     ) -> Publicacion:
         """
         Crea una nueva publicación para un profesional.
-
+        
         Args:
             profesional_id: UUID del profesional
             especialidad_id: ID de la especialidad
             titulo: Título de la publicación
             descripcion: Descripción/contenido de la publicación
             fecha_publicacion: Fecha de publicación (por defecto hoy)
-
+            
         Returns:
             Publicacion creada
-
+            
         Raises:
             ValueError: Si la especialidad no existe
         """
         # Verificar que la especialidad existe
         especialidad = self.obtener_especialidad_por_id(especialidad_id)
         if not especialidad:
-            raise ValueError(
-                f"No existe la especialidad con ID {especialidad_id}"
-            )
+            raise ValueError(f"No existe la especialidad con ID {especialidad_id}")
 
         # Fecha por defecto
         if fecha_publicacion is None:
@@ -221,7 +216,7 @@ class CatalogoRepository:
             especialidad_id=especialidad_id,
             titulo=titulo.strip(),
             descripcion=descripcion.strip(),
-            fecha_publicacion=fecha_publicacion,
+            fecha_publicacion=fecha_publicacion
         )
         self.session.add(orm)
         self.session.flush()
@@ -231,10 +226,10 @@ class CatalogoRepository:
     def eliminar_publicacion(self, id: UUID) -> bool:
         """
         Elimina una publicación por su ID.
-
+        
         Args:
             id: UUID de la publicación
-
+            
         Returns:
             True si se eliminó, False si no existía
         """
@@ -248,23 +243,20 @@ class CatalogoRepository:
             return True
         return False
 
-    # =====================
-    # TARIFAS (si se implementa tabla separada en el futuro)
-    # =====================
 
-    def obtener_tarifa_especialidad(
-        self, especialidad_id: int
-    ) -> Optional[Decimal]:
+    # TARIFAS -Separación a futuro-
+
+    def obtener_tarifa_especialidad(self, especialidad_id: int) -> Optional[Decimal]:
         """
         Obtiene la tarifa actual de una especialidad.
-
+        
         NOTA: Por ahora obtiene la tarifa base de la especialidad.
         En el futuro, si se implementa tabla de tarifas históricas,
         se buscará la tarifa vigente según fecha.
-
+        
         Args:
             especialidad_id: ID de la especialidad
-
+            
         Returns:
             Tarifa o None si no existe la especialidad
         """

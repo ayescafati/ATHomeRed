@@ -7,7 +7,7 @@ from datetime import date, time, datetime
 from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
 
 
 # Value Objects Schemas
@@ -24,8 +24,7 @@ class UbicacionSchema(BaseModel):
     latitud: Optional[float] = None
     longitud: Optional[float] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DisponibilidadSchema(BaseModel):
@@ -37,8 +36,7 @@ class DisponibilidadSchema(BaseModel):
     hora_inicio: time
     hora_fin: time
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MatriculaSchema(BaseModel):
@@ -49,8 +47,7 @@ class MatriculaSchema(BaseModel):
     vigente_desde: date
     vigente_hasta: Optional[date] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Entities Schemas
@@ -62,8 +59,7 @@ class EspecialidadSchema(BaseModel):
     id: int
     nombre: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UsuarioBase(BaseModel):
@@ -95,8 +91,7 @@ class ProfesionalResponse(UsuarioBase):
     disponibilidades: List[DisponibilidadSchema]
     matriculas: List[MatriculaSchema]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProfesionalUpdate(BaseModel):
@@ -155,8 +150,7 @@ class PacienteResponse(BaseModel):
     def nombre_completo(self) -> str:
         return f"{self.nombre} {self.apellido}".strip()
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Consulta/Cita Schemas
@@ -190,8 +184,7 @@ class ConsultaResponse(BaseModel):
     notas: Optional[str]
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ConsultaUpdate(BaseModel):
@@ -202,9 +195,6 @@ class ConsultaUpdate(BaseModel):
     hora_fin: Optional[time] = None
     motivo: Optional[str] = None
     notas: Optional[str] = None
-
-
-# Búsqueda Schemas
 
 
 class BusquedaProfesionalRequest(BaseModel):
@@ -254,8 +244,7 @@ class ValoracionResponse(BaseModel):
     comentario: Optional[str]
     fecha: date
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PromedioValoracionResponse(BaseModel):
@@ -264,9 +253,6 @@ class PromedioValoracionResponse(BaseModel):
     profesional_id: UUID
     promedio: float
     total_valoraciones: int
-
-
-# Auth Schemas (TODO)
 
 
 class TokenSchema(BaseModel):
