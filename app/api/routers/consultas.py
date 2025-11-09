@@ -20,10 +20,17 @@ from app.api.policies import IntegrityPolicies
 from app.infra.repositories.consulta_repository import ConsultaRepository
 from app.infra.repositories.profesional_repository import ProfesionalRepository
 from app.infra.repositories.paciente_repository import PacienteRepository
+from app.infra.repositories.direccion_repository import DireccionRepository
 from app.domain.entities.agenda import Cita
 from app.domain.enumeraciones import EstadoCita
 from app.domain.value_objects.objetos_valor import Ubicacion
-from app.domain.eventos import CitaCreada
+from app.domain.eventos import (
+    CitaCreada,
+    CitaConfirmada,
+    CitaCancelada,
+    CitaCompletada,
+    CitaReprogramada,
+)
 from app.domain.observers.observadores import EventBus
 
 router = APIRouter()
@@ -139,10 +146,6 @@ def crear_consulta(
         )
 
         # Guardar en el repositorio (crear dirección desde ubicación)
-        from app.infra.repositories.direccion_repository import (
-            DireccionRepository,
-        )
-
         # Por ahora, usar la dirección del profesional
         cita_creada = repo.crear(
             cita,
@@ -298,9 +301,11 @@ def actualizar_consulta(
 def confirmar_consulta(
     consulta_id: UUID,
     repo: ConsultaRepository = Depends(get_consulta_repository),
+    event_bus: EventBus = Depends(get_event_bus),
 ):
     """
     Confirma una consulta pendiente.
+    Publica evento CitaConfirmada en el EventBus para notificaciones.
     """
     consulta = repo.obtener_por_id(consulta_id)
 
@@ -313,6 +318,10 @@ def confirmar_consulta(
     try:
         consulta.confirmar()
         consulta_actualizada = repo.actualizar(consulta)
+
+        # PUBLICAR EVENTO: CitaConfirmada
+        evento = CitaConfirmada(cita_id=consulta_id)
+        event_bus.publicar(evento)
 
         return consulta_actualizada
 
@@ -327,9 +336,11 @@ def cancelar_consulta(
     consulta_id: UUID,
     motivo: str = None,
     repo: ConsultaRepository = Depends(get_consulta_repository),
+    event_bus: EventBus = Depends(get_event_bus),
 ):
     """
     Cancela una consulta.
+    Publica evento CitaCancelada en el EventBus para notificaciones.
     """
     consulta = repo.obtener_por_id(consulta_id)
 
@@ -343,7 +354,99 @@ def cancelar_consulta(
         consulta.cancelar(motivo=motivo)
         repo.actualizar(consulta)
 
+        # PUBLICAR EVENTO: CitaCancelada
+        evento = CitaCancelada(cita_id=consulta_id, motivo=motivo)
+        event_bus.publicar(evento)
+
         return None
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
+
+
+@router.post("/{consulta_id}/completar", response_model=ConsultaResponse)
+def completar_consulta(
+    consulta_id: UUID,
+    notas_finales: str = None,
+    repo: ConsultaRepository = Depends(get_consulta_repository),
+    event_bus: EventBus = Depends(get_event_bus),
+):
+    """
+    Marca una consulta confirmada como completada.
+    Publica evento CitaCompletada en el EventBus para notificaciones.
+    """
+    consulta = repo.obtener_por_id(consulta_id)
+
+    if not consulta:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Consulta con ID {consulta_id} no encontrada",
+        )
+
+    try:
+        consulta.completar(notas_finales=notas_finales)
+        consulta_actualizada = repo.actualizar(consulta)
+
+        # PUBLICAR EVENTO: CitaCompletada
+        evento = CitaCompletada(cita_id=consulta_id, notas=notas_finales)
+        event_bus.publicar(evento)
+
+        return consulta_actualizada
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
+
+
+@router.post("/{consulta_id}/reprogramar", response_model=ConsultaResponse)
+def reprogramar_consulta(
+    consulta_id: UUID,
+    data: ConsultaUpdate,
+    repo: ConsultaRepository = Depends(get_consulta_repository),
+    event_bus: EventBus = Depends(get_event_bus),
+):
+    """
+    Reprograma una consulta (cambia fecha y horarios).
+    Publica evento CitaReprogramada en el EventBus para notificaciones.
+    """
+    consulta = repo.obtener_por_id(consulta_id)
+
+    if not consulta:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Consulta con ID {consulta_id} no encontrada",
+        )
+
+    if not data.fecha or not data.hora_inicio or not data.hora_fin:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Para reprogramar se requiere fecha, hora_inicio y hora_fin",
+        )
+
+    try:
+        # Guardar valores anteriores para el evento
+        fecha_anterior = f"{consulta.fecha} {consulta.hora_inicio}-{consulta.hora_fin}"
+        
+        consulta.reprogramar(
+            nueva_fecha=data.fecha,
+            nueva_hora_inicio=data.hora_inicio,
+            nueva_hora_fin=data.hora_fin,
+        )
+        consulta_actualizada = repo.actualizar(consulta)
+
+        # PUBLICAR EVENTO: CitaReprogramada
+        fecha_nueva = f"{data.fecha} {data.hora_inicio}-{data.hora_fin}"
+        evento = CitaReprogramada(
+            cita_id=consulta_id,
+            fecha_anterior=fecha_anterior,
+            fecha_nueva=fecha_nueva,
+        )
+        event_bus.publicar(evento)
+
+        return consulta_actualizada
 
     except ValueError as e:
         raise HTTPException(
