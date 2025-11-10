@@ -368,29 +368,18 @@ alembic downgrade -1
 
 ---
 
-
 ## API rápida
 
-**Auth (MVP)** – prefijo `"/api/v1/auth"`
+**Auth (MVP)** – prefijo `/api/v1/auth`
 - `POST /api/v1/auth/register-json` – registrar usuario
 - `POST /api/v1/auth/login` – login (devuelve `access_token`)
-- `GET /api/v1/auth/me` – perfil del usuario (Bearer token)
+- `GET /api/v1/auth/me` – perfil del usuario (requiere Bearer token)
 
-Ejemplo de login:
+**Ejemplo de login (cURL)**
 ```bash
-curl -X POST http://localhost:8000/api/v1/auth/login   -H "Content-Type: application/json"   -d '{"username": "probando", "password": "Prueba123."}'
-```
-
-Más routers expuestos: `busqueda`, `consultas`, `pacientes`, `profesionales`, `valoraciones` (ver `/docs`).
-
----
-
-## Roadmap
-
-- Integrar **SMTP real** para Observer.
-- Agregar **tests** de integración (estrategias, policies y flujo auth).
-- Configurar **CI/CD** (lint, tests, build).
-- Documentación de payloads y ejemplos completos de flujo.
+curl -X POST "http://localhost:8000/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"probando@gmail.com","password":"Prueba123."}'
 
 ---
 
