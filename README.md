@@ -20,6 +20,9 @@
   - [Usuarios](usuarios)
   - [Clases principales](#clases-principales)
   - [Patrones y arquitectura](#patrones-y-arquitectura)
+- [Diagramas UML](#diagramas-uml)
+  - [Diagrama de clases](#diagrama-de-clases)
+  - [Diagrama de base de datos](#diagrama-de-bases-de-datos)
 - [Tecnologías](#tecnologías)
 - [Configuración](#configuración)
 - [Puesta en marcha](#puesta-en-marcha)
@@ -27,8 +30,6 @@
   - [Con Docker (DB)](#con-docker-db)
   - [Migraciones](#migraciones)
 - [API rapida](#api-rápida)
-- [Diagramas UML](#diagramas-uml)
-- [Roadmap](#roadmap)
 - [Licencia](#licencia)
   
 ---
@@ -266,38 +267,39 @@ En cuanto al **estado actual**, el proyecto ya cuenta con Strategy operativo en 
 ---
 
 ## Diagramas UML
-- **[Diagrama de clases](app/docs/uml/clases-uml-v1.svg)**
-- **[Diagrama de DB](app/docs/uml/db-uml-v1.svg)**
 
-> **Versión preliminar:**
-> El modelado UML se encuentra en construcción. Esta es **la primera versión**, elaborada para representar las bases del sistema y comenzar a integrar los patrones de diseño. En próximas iteraciones se unificarán ambos diagramas y se ajustarán los nombres, relaciones y estereotipos según la evolución del código.
+El proyecto incluye **dos** diagramas UML: uno de **clases** (dominio y patrones) y otro de **base de datos** (esquema físico).
 
-Para reflejar la estructura y los patrones aplicados, el proyecto incluye **dos diagramas de clases complementarios**, que representan distintos niveles de detalle del sistema.
+### Diagrama de clases 
 
-#### 1. Diagrama inferior (modelo funcional y búsqueda)
+- **[Diagrama de clases (MVP + búsqueda)](app/docs/uml/clases-uml-v1.svg)**
 
-El **diagrama inferior** (con fondo lila) muestra el **modelo funcional del MVP**, incluyendo las clases principales del sistema:
-`Usuario`, `Responsable`, `Profesional`, `Paciente`, `Ubicacion`, `Disponibilidad`, `Publicacion` y `Consulta`.
+El diagrama de clases refleja el estado actual del **dominio** y los **patrones** aplicados. La terminología está unificada: se usa **Solicitante** (no “Responsable”) y se muestra **Cita/Consulta** como la misma entidad de negocio.
 
-Además, este diagrama incorpora el **patrón Strategy** aplicado al módulo de **búsqueda de profesionales**, con las clases:
-`Buscador`, `EstrategiaBusqueda`, `BusquedaPorZona`, `BusquedaPorEspecialidad` y `BusquedaCombinada`.
-Esto permite ver cómo el patrón se integra de manera directa con las entidades del sistema.
+### Qué muestra
 
-#### 2. Diagrama superior (Observer + Strategy en asignación)
+- **Entidades principales**
+  - `Usuario` *(abstracta)*, `Solicitante`, `Profesional`, `Paciente`
+  - *Value Objects*: `Ubicacion`, `Disponibilidad`, `Matricula`
+  - Catálogo/servicios: `Especialidad`, `Tarifa`, `Publicacion`
+  - Agenda: `Cita`/`Consulta` (con `EstadoCita`)
 
-El **diagrama superior** (con fondo blanco) se centra en los **patrones de diseño** aplicados al proceso de **asignación y notificación de consultas**.
-En este se representan:
+- **Relaciones clave**
+  - `Solicitante` **1..*** `Paciente` (un solicitante puede gestionar varios pacientes)
+  - `Profesional` **1..*** `Disponibilidad`
+  - `Profesional` ***..*** `Especialidad`
+  - `Cita` **1..1** `Profesional` y **1..1** `Paciente`; referencia una `Ubicacion`
 
-* **Observer:** `Subject`, `Observer`, `NotificadorEmail`, `AuditLogger`, aplicados sobre la clase `Cita` (equivalente a `Consulta` en el MVP).
-* **Strategy (asignación):** `AsignacionStrategy`, `DisponibilidadHorariaStrategy` y `MatriculaProvinciaStrategy`, que nos definen las políticas de validación al asignar un profesional.
+- **Patrones representados**
+  - **Strategy (búsqueda/asignación):** `Buscador` (contexto), `Estrategia` (interfaz),
+    `BusquedaPorZona`, `BusquedaPorEspecialidad`, `BusquedaCombinada`
+  - **Observer (notificaciones/auditoría):** `Observer`, `Subject`, `NotificadorEmail`,
+    `AuditLogger`, `Event` (eventos de `Cita`)
 
-#### 3. Estado actual y próximos pasos
+### Diagrama de bases de datos
 
-Ambos diagramas fueron desarrollados en paralelo y actualmente presentan **nombres y estructuras parcialmente distintas** (por ejemplo, `Cita` y `Consulta`, o la duplicación de estrategias).
-Esto es **intencional en esta primera versión**, ya que el objetivo es explorar los dos niveles de modelado:
+- **[Diagrama de base de datos](app/docs/uml/db-uml-v1.svg)**
 
-* El **modelo funcional** (entidades principales del MVP).
-* La **arquitectura de patrones** que se aplicará sobre él.
 
 ---
 
@@ -380,7 +382,7 @@ alembic downgrade -1
 curl -X POST "http://localhost:8000/api/v1/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"email":"probando@gmail.com","password":"Prueba123."}'
-
+```
 ---
 
 ## Licencia
