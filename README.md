@@ -11,21 +11,22 @@
 ---
 
 ## Índice
-- [¿Qué es ATHomeRed?](#que-es-athomered)
+- [¿Qué es ATHomeRed?](#qué-es-athomered)
 - [Problema que resuelve](#problema-que-resuelve)
 - [Valor que aporta](#valor-que-aporta)
 - [Estado actual del proyecto](#estado-actual-del-proyecto)
   - [Estructura actual del repositorio](#estructura-actual-del-repositorio)
   - [Implementaciones](#implementaciones)
-    - [Clases principales](#Clases-principales)
+  - [Usuarios](usuarios)
+  - [Clases principales](#clases-principales)
   - [Patrones y arquitectura](#patrones-y-arquitectura)
-- [Tecnologías](#tecnologias)
+- [Tecnologías](#tecnologías)
 - [Configuración](#configuración)
 - [Puesta en marcha](#puesta-en-marcha)
   - [Local](#local)
   - [Con Docker (DB)](#con-docker-db)
   - [Migraciones](#migraciones)
-- [API rapida](#api-rapida)
+- [API rapida](#api-rápida)
 - [Diagramas UML](#diagramas-uml)
 - [Roadmap](#roadmap)
 - [Licencia](#licencia)
@@ -65,7 +66,6 @@ AT Home Red (FastAPI) implementa los flujos centrales de un sistema de reservas 
 ```
 ATHomeRed-main/
 ├── .env                               # Variables locales (no commitear)
-├── .env.example                       # Plantilla de variables (copiar a .env)
 ├── .gitattributes                     # Normaliza EOL/atributos en Git
 ├── .gitignore                         # Archivos/carpetas a ignorar por Git
 ├── alembic.ini                        # Configuración de Alembic
@@ -92,7 +92,7 @@ ATHomeRed-main/
 │   │       ├── consultas.py           # Router para gestión de consultas/citas médicas
 │   │       ├── pacientes.py           # Router para gestión de pacientes
 │   │       ├── profesionales.py       # Router para gestión de profesionales
-│   │       ├── valoraciones.py        # Router para gestión de valoraciones
+│   │       └── valoraciones.py        # Router para gestión de valoraciones
 │   ├── docs/
 │   │   └── uml/                       # Diagramas UML (WIP)
 │   ├── domain/                        # Capa de dominio (sin dependencias infra)
@@ -102,15 +102,15 @@ ATHomeRed-main/
 │   │   │   ├── agenda.py              # Entidad Cita (lógica de estados/negocio)
 │   │   │   ├── catalogo.py            # Especialidad, Tarifa, Publicacion, FiltroBusqueda
 │   │   │   ├── usuarios.py            # Usuario/Profesional/Solicitante (Responsable)
-│   │   │   ├── valoraciones.py        # Entidades de valoraciones/opiniones
+│   │   │   └── valoraciones.py        # Entidades de valoraciones/opiniones
 │   │   ├── observers/
-│   │   │   ├── observadores.py        # Observer, Subject, EventBus, NotificadorEmail, AuditLogger
+│   │   │   └── observadores.py        # Observer/Subject + EventBus (publish/subscribe, suscribir_observer); NotificadorEmail (demo print/log), AuditLogger (auditoría).
 │   │   ├── strategies/
 │   │   │   ├── buscador.py            # Contexto Strategy (ejecuta estrategias)
 │   │   │   ├── estrategia_asignacion.py # Estrategias de asignación/validación
-│   │   │   ├── estrategia.py          # Contratos e implementaciones de búsqueda
+│   │   │   └── estrategia.py          # Contratos e implementaciones de búsqueda
 │   │   └── value_objects/
-│   │       ├── objetos_valor.py       # Ubicacion, Disponibilidad, Matricula (VOs)
+│   │       └── objetos_valor.py       # Ubicacion, Disponibilidad, Matricula (VOs)
 │   ├── infra/                         # Capa de infraestructura (ORM/repos/servicios)
 │   │   ├── persistence/               # Modelos ORM y utilidades DB
 │   │   │   ├── agenda.py              # Mapeos ORM de agenda/citas
@@ -125,23 +125,20 @@ ATHomeRed-main/
 │   │   │   ├── servicios.py           # ORM de catálogo/servicios
 │   │   │   ├── ubicacion.py           # ORM de direcciones/geo
 │   │   │   ├── usuarios.py            # ORM de usuarios
-│   │   │   ├── valoraciones.py        # ORM de valoraciones
-│   │   ├── repositories/              # Repositorios (aislan dominio de ORM/DB)
-│   │   │   ├── auth_repository.py     # Acceso persistente relacionado a auth
-│   │   │   ├── catalogo_repository.py # Acceso a catálogo (especialidades/servicios)
-│   │   │   ├── consulta_repository.py # Acceso a citas/consultas (CRUD/listados)
-│   │   │   ├── direccion_repository.py# Provincias/deptos/barrios
-│   │   │   ├── paciente_repository.py # Acceso a pacientes
-│   │   │   ├── profesional_repository.py # Acceso a profesionales
-│   │   │   ├── usuario_repository.py  # Acceso a usuarios, intentos/lock/último login
-│   │   │   ├── valoracion_repository.py # Acceso a valoraciones
-│   │   ├── static/
-│   │   │   ├── app.js                 # UI mínima/demo (infra) — duplicada con app/static
-│   │   │   └── index.html             # UI mínima/demo (infra)
-│   │   └── services/
-│   │       └── auth_service.py        # Servicio de Auth aquí (⚠︎ si migraste a app/services, alinear imports)
+│   │   │   └── valoraciones.py        # ORM de valoraciones
+│   │   └──  repositories/              # Repositorios (aislan dominio de ORM/DB)
+│   │       ├── auth_repository.py     # Acceso persistente relacionado a auth
+│   │       ├── catalogo_repository.py # Acceso a catálogo (especialidades/servicios)
+│   │       ├── consulta_repository.py # Acceso a citas/consultas (CRUD/listados)
+│   │       ├── direccion_repository.py# Provincias/deptos/barrios
+│   │       ├── paciente_repository.py # Acceso a pacientes
+│   │       ├── profesional_repository.py # Acceso a profesionales
+│   │       ├── usuario_repository.py  # Acceso a usuarios, intentos/lock/último login
+│   │       └── valoracion_repository.py # Acceso a valoraciones
+│   ├── services/
+│   │   └── auth_service.py            # Servicio de autenticación
 │   ├── static/
-│   │   ├── app.js                     # UI mínima/demo (app) — considerar consolidar una sola carpeta
+│   │   ├── app.js                     # UI mínima/demo (app)
 │   │   └── index.html                 # UI mínima/demo (app)
 ├── docker/
 │   └── docker-compose.yml             # Orquestado de servicios (PostgreSQL, etc.)
@@ -152,25 +149,45 @@ ATHomeRed-main/
     ├── init_db.py                     # Inicialización/seed básico
     ├── smoke_auth.py                  # Smoke test de registro/login
     └── test_connection.py             # Prueba de conexión y parámetros
-
 ```
+
 ### Implementaciones
 
-**API y routers por recurso.** La aplicación se instancia en `app/main.py` y publica endpoints agrupados por dominio bajo `app/api/routers/` (auth, búsqueda, consultas, pacientes, profesionales y valoraciones). Esta organización mantiene el contrato HTTP estable y facilita la navegación desde `/docs`.
+#### **API y routers por recurso**
+La aplicación se instancia en `app/main.py` y publica endpoints agrupados por dominio bajo `app/api/routers/` (auth, búsqueda, consultas, pacientes, profesionales y valoraciones). Esta organización mantiene el contrato HTTP estable y facilita la navegación desde `/docs`.
 
-**Autenticación y seguridad.** El flujo está operativo con **hash Argon2** y **JWT HS256**. El router `app/api/routers/auth.py` (prefijo `/api/v1/auth`) expone: `POST /register-json` (201) para alta de usuario con **roles excluyentes** (profesional/solicitante; si no se especifica, default a solicitante); `POST /login` que devuelve `{access_token, token_type}` y aplica **bloqueo temporal por intentos fallidos** (`423 Locked` si bloqueado; `401` para credenciales inválidas); y `GET /me`, que lee `Authorization: Bearer <token>` y retorna el perfil básico. La lógica vive en `app/services/auth_service.py` (`hash_password/verify_password`, `crear_access_token/validar_access_token` con `AT_HOME_RED_SECRET` y `ACCESS_TOKEN_EXPIRE_MINUTES`) y el repositorio `app/infra/repositories/usuario_repository.py` gestiona `obtener_por_email`, `incrementar_intentos_fallidos`, `esta_bloqueado`, `resetear_intentos_fallidos` y `actualizar_ultimo_login`.
+#### **Autenticación y seguridad** 
+El flujo está operativo con **hash Argon2** y **JWT HS256**. El router `app/api/routers/auth.py` (prefijo `/api/v1/auth`) expone: `POST /register-json` (201) para alta de usuario con **roles excluyentes** (profesional/solicitante; si no se especifica, default a solicitante); `POST /login` que devuelve `{access_token, token_type}` y aplica **bloqueo temporal por intentos fallidos** (`423 Locked` si bloqueado; `401` para credenciales inválidas); y `GET /me`, que lee `Authorization: Bearer <token>` y retorna el perfil básico. La lógica vive en `app/services/auth_service.py` (`hash_password/verify_password`, `crear_access_token/validar_access_token` con `AT_HOME_RED_SECRET` y `ACCESS_TOKEN_EXPIRE_MINUTES`) y el repositorio `app/infra/repositories/usuario_repository.py` gestiona `obtener_por_email`, `incrementar_intentos_fallidos`, `esta_bloqueado`, `resetear_intentos_fallidos` y `actualizar_ultimo_login`.
 
-**Persistencia y migraciones.** El modelo de datos está implementado en **SQLAlchemy** y versionado con **Alembic** (migración inicial en `alembic/versions/…`). La capa de **repositorios** realiza el mapeo ORM↔dominio y encapsula el CRUD. La base corre en **PostgreSQL** local o vía **Docker Compose**; la configuración se centraliza en `database.py`/`base.py` con `DATABASE_URL`.
+#### **Persistencia y migraciones** 
+El modelo de datos está implementado en **SQLAlchemy** y versionado con **Alembic** (migración inicial en `alembic/versions/…`). La capa de **repositorios** realiza el mapeo ORM↔dominio y encapsula el CRUD. La base corre en **PostgreSQL** local o vía **Docker Compose**; la configuración se centraliza en `database.py`/`base.py` con `DATABASE_URL`.
 
-**Reservas / consultas.** El módulo de **consultas** ofrece creación (`POST /`, 201), lectura (`GET /{consulta_id}`), actualización (`PUT /{consulta_id}`) y cancelación (`DELETE /{consulta_id}`, 204), e incorpora **transiciones de estado** explícitas: confirmar (`POST /{consulta_id}/confirmar`), completar (`POST /{consulta_id}/completar`) y reprogramar (`POST /{consulta_id}/reprogramar`, requiere `fecha`, `hora_inicio`, `hora_fin`). Además, incluye listados filtrables por profesional (`GET /profesional/{profesional_id}` con `desde`, `hasta`, `solo_activas`) y por paciente (`GET /paciente/{paciente_id}` con `desde`, `solo_activas`). Antes de persistir se aplican **políticas de integridad** mediante `IntegrityPolicies` (profesional verificado/activo, pertenencia del paciente al solicitante, solicitante activo) y **reglas de negocio** (fin > inicio, no fechas pasadas y **anti-solapamiento**). La **ubicación** se modela como `Ubicacion` (VO) a partir del DTO y, provisoriamente, se persiste usando la **dirección del profesional** como `direccion_id`. Cada transición publica su **evento de dominio** en el `EventBus` (`CitaCreada`, `CitaConfirmada`, `CitaCancelada`, `CitaCompletada`, `CitaReprogramada`), como se verá en **Notificaciones (Observer)** y en la sección **Patrones y arquitectura**.
+#### **Reservas / consultas** 
+El módulo de **consultas** ofrece creación (`POST /`, 201), lectura (`GET /{consulta_id}`), actualización (`PUT /{consulta_id}`) y cancelación (`DELETE /{consulta_id}`, 204), e incorpora **transiciones de estado** explícitas: confirmar (`POST /{consulta_id}/confirmar`), completar (`POST /{consulta_id}/completar`) y reprogramar (`POST /{consulta_id}/reprogramar`, requiere `fecha`, `hora_inicio`, `hora_fin`). Además, incluye listados filtrables por profesional (`GET /profesional/{profesional_id}` con `desde`, `hasta`, `solo_activas`) y por paciente (`GET /paciente/{paciente_id}` con `desde`, `solo_activas`). Antes de persistir se aplican **políticas de integridad** mediante `IntegrityPolicies` (profesional verificado/activo, pertenencia del paciente al solicitante, solicitante activo) y **reglas de negocio** (fin > inicio, no fechas pasadas y **anti-solapamiento**). La **ubicación** se modela como `Ubicacion` (VO) a partir del DTO y, provisoriamente, se persiste usando la **dirección del profesional** como `direccion_id`. Cada transición publica su **evento de dominio** en el `EventBus` (`CitaCreada`, `CitaConfirmada`, `CitaCancelada`, `CitaCompletada`, `CitaReprogramada`), como se verá en **Notificaciones (Observer)** y en la sección **Patrones y arquitectura**.
 
-**Búsqueda y asignación (Strategy).** El router de búsqueda construye un `FiltroBusqueda` a partir del DTO, **resuelve la especialidad por nombre→ID** usando el catálogo (404 si no existe) y **valida ID** cuando corresponde. En función de los criterios, selecciona dinámicamente la estrategia del dominio (`BusquedaCombinada`, `BusquedaPorEspecialidad` o `BusquedaPorZona`) y ejecuta el **contexto `Buscador`**. Endpoints: `POST /profesionales` (retorna `profesionales`, `total` y `criterios_aplicados`), `GET /especialidades` (lista desde DB), `GET /ubicaciones/provincias`, `GET /ubicaciones/provincias/{provincia_id}/departamentos` y `GET /ubicaciones/departamentos/{departamento_id}/barrios`. Si no se especifica **ningún criterio válido** se responde 400; nombres/IDs de especialidad inexistentes devuelven 404; errores inesperados, 500. Como se verá en **Patrones y arquitectura**, este diseño permite **cambiar estrategias sin tocar los endpoints**.
+#### **Búsqueda y asignación (Strategy)** 
+El router de búsqueda construye un `FiltroBusqueda` a partir del DTO, **resuelve la especialidad por nombre→ID** usando el catálogo (404 si no existe) y **valida ID** cuando corresponde. En función de los criterios, selecciona dinámicamente la estrategia del dominio (`BusquedaCombinada`, `BusquedaPorEspecialidad` o `BusquedaPorZona`) y ejecuta el **contexto `Buscador`**. Endpoints: `POST /profesionales` (retorna `profesionales`, `total` y `criterios_aplicados`), `GET /especialidades` (lista desde DB), `GET /ubicaciones/provincias`, `GET /ubicaciones/provincias/{provincia_id}/departamentos` y `GET /ubicaciones/departamentos/{departamento_id}/barrios`. Si no se especifica **ningún criterio válido** se responde 400; nombres/IDs de especialidad inexistentes devuelven 404; errores inesperados, 500. Como se verá en **Patrones y arquitectura**, este diseño permite **cambiar estrategias sin tocar los endpoints**.
 
-**Notificaciones (Observer).** El sistema emite **eventos de dominio** y los procesa mediante un **EventBus**. El bus admite dos modalidades de suscripción: **handlers funcionales** (`suscribir(tipo, handler)`) y **observers tradicionales** (`suscribir_observer(tipo, observer)`), ambos definidos en `app/domain/observers/observadores.py`. En modo demo están activos: `NotificadorEmail` (imprime por consola) y `AuditLogger` (registra en logs). La instancia y el wiring viven en `app/api/event_bus.py`. Está **preparado para SMTP** vía variables de entorno, como se verá en **Patrones y arquitectura**.
+#### **Notificaciones (Observer)** 
+El sistema emite **eventos de dominio** y los procesa mediante un **EventBus**. El bus admite dos modalidades de suscripción: **handlers funcionales** (`suscribir(tipo, handler)`) y **observers tradicionales** (`suscribir_observer(tipo, observer)`), ambos definidos en `app/domain/observers/observadores.py`. En modo demo están activos: `NotificadorEmail` (imprime por consola) y `AuditLogger` (registra en logs). La instancia y el wiring viven en `app/api/event_bus.py`. Está **preparado para SMTP** vía variables de entorno, como se verá en **Patrones y arquitectura**.
 
-**Operativa y utilidades.** El repositorio incluye **Docker Compose** para la DB y **scripts de verificación** (smoke de auth, conexión y set-up) para acelerar el arranque local. Se provee `.env.example` con las variables críticas y la documentación **OpenAPI/Swagger UI** generada automáticamente por FastAPI.
+#### **Operativa y utilidades** 
+El repositorio incluye **Docker Compose** para la DB y **scripts de verificación** (smoke de auth, conexión y set-up) para acelerar el arranque local. Se provee `.env.example` con las variables críticas y la documentación **OpenAPI/Swagger UI** generada automáticamente por FastAPI.
 
-##### Clases principales
+### Usuarios
+
+- **Usuario (abstracta).** Persona con cuenta de acceso que sirve como base para los dos roles operativos del sistema. Atributos: `id`, `nombre`, `apellido`, `email`, `celular`, `Ubicacion`, `activo` (True por defecto). Métodos útiles: `nombre_completo`, `activar`/`desactivar` y `datos_contacto`.
+
+- **Profesional.** Hereda de `Usuario` y ofrece servicios de salud. Campos específicos: `verificado` (bool), `especialidades` (`Especialidad`), `disponibilidades` (`Disponibilidad`) y `matriculas` (`Matricula`). Expone `agregar_disponibilidad` para gestionar su agenda.
+
+- **Solicitante.** Hereda de `Usuario` y gestiona turnos propios o de personas a su cargo. Mantiene una lista de `pacientes` y el método `agregar_paciente`. En casos de dependientes, el **email/celular de contacto** se toma del Solicitante.
+
+- **Paciente.** Persona atendida; **no** hereda de `Usuario` (puede no tener cuenta). Atributos: `id`, `nombre`, `apellido`, `fecha_nacimiento`, `Ubicacion`, `solicitante_id`, `relacion` (p. ej. `"self"`, `"hijo/a"`, `"tutor/a"`), `notas`. Métodos de conveniencia: `edad(hoy)`, `es_menor_de_edad()`, `es_auto_gestionado()`.
+
+**Nota de diseño.** Se separa explícitamente “quién tiene cuenta” (Usuario) de “quién recibe la atención” (Paciente). Esto permite que un **Solicitante** administre varios **Pacientes** y centraliza los datos de contacto. `Ubicacion` es un value object compartido; la verificación de profesionales y otras reglas viven fuera de estas clases (policies/servicios).
+
+
+### Clases principales
 
 La siguiente tabla resume las clases, value objects y componentes relevantes tal como están nombrados e implementados en el repositorio. Útil para referencia rápida durante la defensa.
 
@@ -191,7 +208,7 @@ La siguiente tabla resume las clases, value objects y componentes relevantes tal
 | `Publicacion`                     | Info pública del profesional. `entities/catalogo.py` |
 | `FiltroBusqueda`                  | Criterios (zona, especialidad, texto). `entities/catalogo.py` |
 
-###### Autenticación
+##### Autenticación
 
 | Componente / DTO         | Rol (ubicación) |
 |--------------------------|-----------------|
