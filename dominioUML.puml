@@ -1,0 +1,352 @@
+@startuml ATHomeRed_Domain_UML
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #F0F0F0
+skinparam classBorderColor #333333
+skinparam arrowColor #333333
+
+' ===== ENUMERACIONES =====
+enum DiaSemana {
+  LUNES = 1
+  MARTES = 2
+  MIERCOLES = 3
+  JUEVES = 4
+  VIERNES = 5
+  SABADO = 6
+  DOMINGO = 7
+}
+
+enum EstadoCita {
+  PENDIENTE
+  CONFIRMADA
+  EN_CURSO
+  COMPLETADA
+  CANCELADA
+  REPROGRAMADA
+}
+
+' ===== VALUE OBJECTS =====
+class Ubicacion {
+  -provincia: str
+  -departamento: str
+  -barrio: str
+  -calle: str
+  -numero: str
+  -latitud: float
+  -longitud: float
+}
+
+class Disponibilidad {
+  -dias_semana: List[DiaSemana]
+  -hora_inicio: time
+  -hora_fin: time
+}
+
+class Vigencia {
+  -vigente_desde: date
+  -vigente_hasta: date
+  +vigente_en(fecha: date): bool
+}
+
+class Matricula {
+  -numero: str
+  -provincia: str
+  -vigente_desde: date
+  -vigente_hasta: date
+  +esta_vigente_en(fecha: date): bool
+}
+
+class Dinero {
+  -monto: Decimal
+  -moneda: str
+}
+
+' ===== ENTIDADES - USUARIOS =====
+abstract class Usuario {
+  -id: UUID
+  -nombre: str
+  -apellido: str
+  -email: str
+  -celular: str
+  -ubicacion: Ubicacion
+  -activo: bool
+  +nombre_completo: str
+  +activar(): void
+  +desactivar(): void
+  +datos_contacto(): str
+}
+
+class Profesional {
+  -verificado: bool
+  -especialidades: List[Especialidad]
+  -disponibilidades: List[Disponibilidad]
+  -matriculas: List[Matricula]
+  +agregar_disponibilidad(d: Disponibilidad): void
+}
+
+class Solicitante {
+  -pacientes: List[Paciente]
+  +agregar_paciente(paciente: Paciente): void
+}
+
+class Paciente {
+  -id: UUID
+  -nombre: str
+  -apellido: str
+  -fecha_nacimiento: date
+  -ubicacion: Ubicacion
+  -solicitante_id: UUID
+  -relacion: str
+  -notas: str
+  +edad(hoy: date): int
+  +nombre_completo: str
+  +es_menor_de_edad(): bool
+  +es_auto_gestionado(): bool
+}
+
+' ===== ENTIDADES - CATALOGO =====
+class Especialidad {
+  -id: int
+  -nombre: str
+}
+
+class Tarifa {
+  -id: int
+  -id_especialidad: int
+  -monto: Decimal
+  -vigente_desde: date
+  -vigente_hasta: date
+  +vigente_en(fecha: date): bool
+}
+
+class Publicacion {
+  -id: int
+  -id_profesional: str
+  -titulo: str
+  -descripcion: str
+  -especialidades: List[Especialidad]
+}
+
+class FiltroBusqueda {
+  -id_especialidad: int
+  -nombre_especialidad: str
+  -barrio: str
+  -departamento: str
+  -provincia: str
+  -texto: str
+  -ordenar_por_distancia: bool
+}
+
+' ===== ENTIDADES - AGENDA =====
+class Cita {
+  -id: UUID
+  -paciente_id: UUID
+  -profesional_id: UUID
+  -fecha: date
+  -hora_inicio: time
+  -hora_fin: time
+  -ubicacion: Ubicacion
+  -estado: EstadoCita
+  -monto_acordado: Dinero
+  -notas: str
+  -motivo_consulta: str
+  -creado_en: datetime
+  -actualizado_en: datetime
+  +duracion: timedelta
+  +esta_pendiente: bool
+  +esta_confirmada: bool
+  +esta_cancelada: bool
+  +esta_completada: bool
+  +puede_modificarse: bool
+  +confirmar(confirmado_por: str): void
+  +cancelar(motivo: str, cancelado_por: str): void
+  +completar(notas_finales: str): void
+  +reprogramar(nueva_fecha, nueva_hora_inicio, nueva_hora_fin): void
+  +establecer_monto(monto: Decimal, moneda: str): void
+  +agregar_nota(nota: str): void
+  +validar_conflicto_horario(otras_citas): bool
+}
+
+' ===== ENTIDADES - VALORACIONES =====
+class Valoracion {
+  -id: UUID
+  -id_profesional: UUID
+  -id_paciente: UUID
+  -puntuacion: int
+  -comentario: str
+  -fecha: datetime
+}
+
+' ===== EVENTOS =====
+class Event {
+  -tipo: str
+  -cita_id: UUID
+  -datos: Dict[str, Any]
+  -timestamp: datetime
+}
+
+class CitaCreada {
+  +__init__(cita_id, profesional_id, paciente_id, **kwargs)
+}
+
+class CitaConfirmada {
+  +__init__(cita_id, confirmado_por)
+}
+
+class CitaCancelada {
+  +__init__(cita_id, motivo, cancelado_por)
+}
+
+class CitaReprogramada {
+  +__init__(cita_id, fecha_anterior, fecha_nueva, **kwargs)
+}
+
+class CitaCompletada {
+  +__init__(cita_id, notas)
+}
+
+' ===== OBSERVERS =====
+abstract class Observer {
+  +update(evt): void
+}
+
+abstract class Subject {
+  -observers: List[Observer]
+  +attach(obs: Observer): void
+  +detach(obs: Observer): void
+  +notify(evt): void
+}
+
+class NotificadorEmail {
+  +update(evt): void
+  -_notificar_cita_creada(evt): void
+  -_notificar_cita_confirmada(evt): void
+  -_notificar_cita_cancelada(evt): void
+  -_notificar_cita_reprogramada(evt): void
+  -_notificar_cita_completada(evt): void
+}
+
+class AuditLogger {
+  +update(evt): void
+}
+
+class EventBus {
+  -_suscriptores: Dict[str, List[Callable]]
+  +suscribir(tipo_evento: str, handler: Callable): void
+  +publicar(evt): void
+  +suscribir_observer(tipo_evento: str, observer: Observer): void
+}
+
+' ===== STRATEGIES =====
+abstract class EstrategiaBusqueda {
+  +buscar(repo: ProfesionalRepository, filtro: FiltroBusqueda): List[Profesional]
+}
+
+class BusquedaPorZona {
+  +buscar(repo, filtro): List[Profesional]
+}
+
+class BusquedaPorEspecialidad {
+  +buscar(repo, filtro): List[Profesional]
+}
+
+class BusquedaCombinada {
+  +buscar(repo, filtro): List[Profesional]
+}
+
+abstract class AsignacionStrategy {
+  +validar(cita: Consulta, profesional: Profesional): bool
+}
+
+class DisponibilidadHorariaStrategy {
+  +validar(cita, profesional): bool
+}
+
+class MatriculaProvinciaStrategy {
+  +validar(cita, profesional): bool
+}
+
+class Buscador {
+  -repo: ProfesionalRepository
+  -estrategia: EstrategiaBusqueda
+  -profesionales: List[Profesional]
+  +cambiar_estrategia(estrategia: EstrategiaBusqueda): void
+  +buscar(filtro: FiltroBusqueda): List[Profesional]
+}
+
+' ===== RELACIONES =====
+
+' Herencia - Usuarios
+Usuario <|-- Profesional
+Usuario <|-- Solicitante
+
+' Composición - Usuarios
+Profesional o-- "0..*" Especialidad
+Profesional o-- "0..*" Disponibilidad
+Profesional o-- "0..*" Matricula
+Profesional o-- "1" Ubicacion
+
+Solicitante o-- "0..*" Paciente
+Solicitante o-- "1" Ubicacion
+
+Paciente o-- "1" Ubicacion
+
+' Value Objects - Relaciones
+Disponibilidad -- DiaSemana
+
+' Catalogo
+Especialidad -- Tarifa
+Especialidad -- Publicacion
+Publicacion o-- "1..*" Especialidad
+
+' Agenda
+Cita --|> Subject
+Cita o-- "1" EstadoCita
+Cita o-- "1" Ubicacion
+Cita o-- "0..1" Dinero
+
+' Eventos
+Event <|-- CitaCreada
+Event <|-- CitaConfirmada
+Event <|-- CitaCancelada
+Event <|-- CitaReprogramada
+Event <|-- CitaCompletada
+
+' Observers
+Subject o-- "0..*" Observer
+Observer <|-- NotificadorEmail
+Observer <|-- AuditLogger
+EventBus o-- "0..*" Observer
+
+' Estrategias de Búsqueda
+EstrategiaBusqueda <|-- BusquedaPorZona
+EstrategiaBusqueda <|-- BusquedaPorEspecialidad
+EstrategiaBusqueda <|-- BusquedaCombinada
+
+Buscador o-- "1" EstrategiaBusqueda
+Buscador -- FiltroBusqueda
+
+' Estrategias de Asignación
+AsignacionStrategy <|-- DisponibilidadHorariaStrategy
+AsignacionStrategy <|-- MatriculaProvinciaStrategy
+
+' Valoraciones
+Valoracion -- Profesional
+Valoracion -- Paciente
+
+note right of Cita
+  Implementa el patrón Subject (Observer)
+  para notificar cambios de estado
+end note
+
+note right of Buscador
+  Context del patrón Strategy
+  permite cambiar algoritmo en runtime
+end note
+
+note bottom of EventBus
+  Bus de eventos central para
+  desacoplar el dominio de observadores
+end note
+
+@enduml
