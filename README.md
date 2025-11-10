@@ -378,7 +378,7 @@ alembic downgrade -1
 
 Ejemplo de login:
 ```bash
-curl -X POST http://localhost:8000/api/v1/auth/login   -H "Content-Type: application/json"   -d '{"username": "maria", "password": "password123"}'
+curl -X POST http://localhost:8000/api/v1/auth/login   -H "Content-Type: application/json"   -d '{"username": "probando", "password": "Prueba123."}'
 ```
 
 Más routers expuestos: `busqueda`, `consultas`, `pacientes`, `profesionales`, `valoraciones` (ver `/docs`).
