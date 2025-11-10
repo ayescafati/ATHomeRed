@@ -1,6 +1,7 @@
 """
 Router de autenticación real (MVP): registro, login y me con JWT.
 """
+
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from typing import Optional
 
@@ -56,7 +57,9 @@ def obtener_usuario_actual(
     svc = AuthService(db)
     payload = svc.validar_access_token(token)
     if not payload:
-        raise HTTPException(status_code=401, detail="Token inválido o expirado")
+        raise HTTPException(
+            status_code=401, detail="Token inválido o expirado"
+        )
 
     sub = payload.get("sub")
     if not sub:

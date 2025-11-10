@@ -13,11 +13,11 @@ class UsuarioRepository:
     """
     Repositorio para gestionar usuarios en el contexto de autenticación.
     
-    TODO: Implementar métodos para:
-    - Crear usuario con password hash
-    - Buscar por email
-    - Actualizar último login
-    - Gestionar bloqueos por intentos fallidos
+    Incluye métodos para:
+    - CRUD de usuarios
+    - Autenticación y login
+    - Rate limiting (bloqueos por intentos fallidos)
+    - Gestión de sesiones
     """
     
     def __init__(self, db: Session):
@@ -179,7 +179,7 @@ class UsuarioRepository:
         self.db.commit()
         return False
     
-    # ==================== VERIFICACIÓN ====================
+    # VERIFICACIÓN 
     
     def marcar_como_verificado(self, usuario_id) -> bool:
         """

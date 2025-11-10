@@ -1,41 +1,93 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
+from abc import ABC, abstractmethod
 from typing import List
-
-from app.domain.entities.catalogo import FiltroBusqueda
 from app.domain.entities.usuarios import Profesional
+from app.domain.entities.catalogo import FiltroBusqueda
 from app.infra.repositories.profesional_repository import ProfesionalRepository
-from .estrategia import EstrategiaBusqueda
 
-@dataclass
-class Buscador:
-    repo: ProfesionalRepository
-    estrategia: EstrategiaBusqueda
-    profesionales: list[Profesional] = field(default_factory=list)
+"""
+Estrategias de búsqueda de profesionales (Patrón Strategy - GoF)
 
-    def cambiar_estrategia(self, estrategia: EstrategiaBusqueda) -> None:
-        self.estrategia = estrategia
-    
-    def buscar(self, filtro: FiltroBusqueda) -> list[Profesional]:
-        self.profesionales = self.estrategia.buscar(self.repo, filtro)
-        return self.profesionales
-    
+Responsabilidades:
+- Definir diferentes algoritmos de búsqueda (por zona, especialidad, combinado)
+- Validar que los filtros sean coherentes antes de delegar al repositorio
+- Delegar la ejecución de queries al ProfesionalRepository
 
-# @dataclass
-# class Buscador:
-#     estrategia: EstrategiaBusqueda
-#     profesionales: List[Profesional] = field(default_factory=list)
-#     publicaciones: List[Publicacion] = field(default_factory=list)
+Ventajas de esta arquitectura:
+- Separación de responsabilidades: Las estrategias validan lógica de negocio,
+  el repositorio maneja persistencia
+- Fácil de extender: Agregar nuevas estrategias sin modificar código existente
+- Testeable: Se puede mockear el repositorio para tests unitarios
+"""
 
-#     def set_fuente(
-#         self,
-#         profesionales: List[Profesional],
-#         publicaciones: List[Publicacion],
-#     ) -> None:
-#         pass
 
-#     def cambiar_estrategia(self, e: EstrategiaBusqueda) -> None:
-#         pass
+class EstrategiaBusqueda(ABC):
+    @abstractmethod
+    def buscar(
+        self, repo: ProfesionalRepository, filtro: FiltroBusqueda
+    ) -> List[Profesional]:
+        pass
 
-#     def buscar(self, filtro: FiltroBusqueda) -> List[Profesional]:
-#         pass
+
+class BusquedaPorZona(EstrategiaBusqueda):
+    def buscar(
+        self, repo: ProfesionalRepository, filtro: FiltroBusqueda
+    ) -> list[Profesional]:
+        if filtro.departamento and not filtro.provincia:
+            raise ValueError(
+                "Se debe especificar la provincia si se indica el departamento."
+            )
+        if filtro.barrio and not filtro.departamento:
+            raise ValueError(
+                "Se debe especificar el departamento si se indica el barrio."
+            )
+
+        # La logica de filtrado se delega al repositorio
+        return repo.buscar_por_ubicacion(
+            provincia=filtro.provincia,
+            departamento=filtro.departamento,
+            barrio=filtro.barrio,
+        )
+
+
+class BusquedaPorEspecialidad(EstrategiaBusqueda):
+    def buscar(
+        self, repo: ProfesionalRepository, filtro: FiltroBusqueda
+    ) -> list[Profesional]:
+        if not filtro.id_especialidad and not filtro.nombre_especialidad:
+            raise ValueError(
+                "Se debe especificar al menos un criterio de especialidad."
+            )
+
+        # Priorizar búsqueda por ID (más eficiente y precisa)
+        return repo.buscar_por_especialidad(
+            especialidad_id=filtro.id_especialidad,
+            especialidad_nombre=filtro.nombre_especialidad,
+        )
+
+
+class BusquedaCombinada(EstrategiaBusqueda):
+    def buscar(
+        self, repo: ProfesionalRepository, filtro: FiltroBusqueda
+    ) -> list[Profesional]:
+        if filtro.departamento and not filtro.provincia:
+            raise ValueError(
+                "Se debe especificar la provincia si se indica el departamento."
+            )
+        if filtro.barrio and not filtro.departamento:
+            raise ValueError(
+                "Se debe especificar el departamento si se indica el barrio."
+            )
+        if not filtro.id_especialidad and not filtro.nombre_especialidad:
+            raise ValueError(
+                "Se debe especificar al menos un criterio de especialidad."
+            )
+
+        # Priorizar ID de especialidad sobre nombre
+        return repo.buscar_combinado(
+            especialidad_id=filtro.id_especialidad,
+            especialidad_nombre=filtro.nombre_especialidad,
+            provincia=filtro.provincia,
+            departamento=filtro.departamento,
+            barrio=filtro.barrio,
+        )

@@ -117,6 +117,8 @@ async function doRegister() {
   const apellido = $('#reg-apellido').value.trim();
   const email = $('#reg-email').value.trim();
   const password = $('#reg-password').value;
+  const rol = $('#reg-rol').value; // 'solicitante' o 'profesional'
+  
   if (!nombre || !apellido || !email || !password) return alert('Todos los campos son requeridos');
 
   // Validación previa con carteles personalizados
@@ -134,8 +136,8 @@ async function doRegister() {
     email,
     celular: null,
     password,
-    es_profesional: false,
-    es_solicitante: true,
+    es_profesional: rol === 'profesional',
+    es_solicitante: rol === 'solicitante',
   };
 
   const resp = await fetch('/api/v1/auth/register-json', {

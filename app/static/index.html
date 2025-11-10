@@ -69,13 +69,17 @@
       <input id="reg-email" type="email" />
       <label for="reg-password">Contraseña</label>
       <input id="reg-password" type="password" placeholder="" />
+      <label for="reg-rol">Tipo de usuario</label>
+      <select id="reg-rol" style="width:100%; background:#0e1424; color:var(--text); border:1px solid #27324a; padding:10px 12px; border-radius:8px; outline:none;">
+        <option value="solicitante">Solicitante (paciente)</option>
+        <option value="profesional">Profesional (prestador de servicios)</option>
+      </select>
       <div id="reg-errors" class="errors hidden">
         <strong>Requisitos de contraseña</strong>
         <ul id="reg-errors-list"></ul>
       </div>
       <div style="margin-top:12px; display:flex; gap:8px;">
         <button id="reg-btn">Crear cuenta</button>
-        <span class="muted">Se creará como solicitante (no profesional).</span>
       </div>
     </section>
 
