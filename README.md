@@ -60,8 +60,9 @@ En Argentina, tanto la enfermería domiciliaria como el acompañamiento terapéu
 
 AT Home Red (FastAPI) implementa los flujos centrales de un sistema de reservas domiciliarias (usuarios, profesionales, búsqueda y reservas) sobre una arquitectura por capas con patrones **Strategy**, **Observer** y **Repository**.
 
-### Estructura actual del repositorio (comentada)
+### Estructura actual del repositorio
 
+```
 ATHomeRed-main/
 ├── .env                               # Variables locales (no commitear)
 ├── .env.example                       # Plantilla de variables (copiar a .env)
