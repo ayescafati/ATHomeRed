@@ -20,7 +20,6 @@ def crear_esquema():
     print(f"Verificando esquema '{SCHEMA}'...")
 
     with ENGINE.connect() as connection:
-        # Verificar si el esquema existe
         result = connection.execute(
             text(
                 "SELECT schema_name FROM information_schema.schemata WHERE schema_name = :schema"
@@ -34,7 +33,6 @@ def crear_esquema():
             print(f"El esquema '{SCHEMA}' ya existe.")
             return True
 
-        # Crear el esquema
         print(f"Creando esquema '{SCHEMA}'...")
         connection.execute(text(f"CREATE SCHEMA {SCHEMA}"))
         connection.commit()

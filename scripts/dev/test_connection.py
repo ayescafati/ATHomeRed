@@ -6,7 +6,6 @@ import os
 import sys
 from pathlib import Path
 
-# Agregar el directorio raíz al path
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
@@ -20,7 +19,6 @@ def test_connection():
     try:
         from app.infra.persistence.database import ENGINE, DATABASE_URL
 
-        # Mostrar URL (con contraseña enmascarada)
         masked_url = str(DATABASE_URL)
         if "://" in masked_url and "@" in masked_url:
             prefix, rest = masked_url.split("://", 1)
@@ -33,15 +31,13 @@ def test_connection():
 
         print(f"\n URL: {masked_url}")
 
-        # Intentar conectar
-        print("\n🔌 Intentando conectar...")
+        print("\n Intentando conectar...")
         from sqlalchemy import text
 
         with ENGINE.connect() as conn:
             result = conn.execute(text("SELECT 1"))
-            print(" ✅ Conexión exitosa!")
+            print("Conexión exitosa!")
 
-            # Obtener información de la BD
             if "postgresql" in str(DATABASE_URL):
                 result = conn.execute(text("SELECT version()"))
                 version = result.fetchone()[0]

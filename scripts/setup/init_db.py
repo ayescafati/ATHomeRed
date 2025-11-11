@@ -8,7 +8,6 @@ import os
 import sys
 from pathlib import Path
 
-# Agregar el directorio raíz al path
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
@@ -26,10 +25,9 @@ def main():
     Este script es útil para desarrollo/testing rápido.
     """
     print("=" * 60)
-    print("🔧 INICIALIZANDO BASE DE DATOS")
+    print("INICIALIZANDO BASE DE DATOS")
     print("=" * 60)
 
-    # Importar todos los modelos para que SQLAlchemy los registre
     from app.infra.persistence import (
         usuarios,
         perfiles,
@@ -46,7 +44,6 @@ def main():
 
     print(f"\n Base de datos: {ENGINE.url}")
 
-    # Crear todas las tablas
     print("\n  Creando tablas...")
     Base.metadata.create_all(bind=ENGINE)
 
