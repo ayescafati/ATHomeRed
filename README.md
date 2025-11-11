@@ -22,7 +22,7 @@
   - [Patrones y arquitectura](#patrones-y-arquitectura)
 - [Diagramas UML](#diagramas-uml)
   - [Diagrama de clases](#diagrama-de-clases)
-  - [Diagrama de base de datos](#diagrama-de-bases-de-datos)
+  - [Diagrama de base de datos](#diagrama-de-base-de-datos)
 - [Tecnologías](#tecnologías)
 - [Configuración](#configuración)
 - [Puesta en marcha](#puesta-en-marcha)
@@ -72,6 +72,8 @@ ATHomeRed-main/
 ├── alembic.ini                        # Configuración de Alembic
 ├── LICENSE                            # Licencia del proyecto
 ├── requirements.txt                   # Dependencias de Python (pip)
+├── out
+│   └── dominioUML                     # Diagramas UML 
 ├── alembic/
 │   ├── env.py                         # Bootstrapping de Alembic (DB/session)
 │   ├── script.py.mako                 # Template para nuevas migraciones
@@ -94,8 +96,6 @@ ATHomeRed-main/
 │   │       ├── pacientes.py           # Router para gestión de pacientes
 │   │       ├── profesionales.py       # Router para gestión de profesionales
 │   │       └── valoraciones.py        # Router para gestión de valoraciones
-│   ├── docs/
-│   │   └── uml/                       # Diagramas UML (WIP)
 │   ├── domain/                        # Capa de dominio (sin dependencias infra)
 │   │   ├── enumeraciones.py           # Enums de dominio (EstadoCita, DíaSemana)
 │   │   ├── eventos.py                 # Eventos de dominio (CitaCreada, CitaConfirmada, etc.)
@@ -268,37 +268,41 @@ En cuanto al **estado actual**, el proyecto ya cuenta con Strategy operativo en 
 
 ## Diagramas UML
 
-El proyecto incluye **dos** diagramas UML: uno de **clases** (dominio y patrones) y otro de **base de datos** (esquema físico).
+El proyecto incluye **dos** diagramas UML: uno de **clases** (dominio + patrones) y otro de **base de datos**.
 
-### Diagrama de clases 
+### Diagrama de clases
 
-- **[Diagrama de clases (MVP + búsqueda)](app/docs/uml/clases-uml-v1.svg)**
+- **[Ver diagrama de clases](out/dominioUML/ATHomeRed_Domain_UML.png)**
 
-El diagrama de clases refleja el estado actual del **dominio** y los **patrones** aplicados. La terminología está unificada: se usa **Solicitante** (no “Responsable”) y se muestra **Cita/Consulta** como la misma entidad de negocio.
+El diagrama refleja el estado actual del **dominio** y los **patrones** aplicados. 
 
-### Qué muestra
+**Qué muestra**
 
-- **Entidades principales**
-  - `Usuario` *(abstracta)*, `Solicitante`, `Profesional`, `Paciente`
-  - *Value Objects*: `Ubicacion`, `Disponibilidad`, `Matricula`
-  - Catálogo/servicios: `Especialidad`, `Tarifa`, `Publicacion`
-  - Agenda: `Cita`/`Consulta` (con `EstadoCita`)
+* **Entidades principales:** `Usuario` *(abstracta)*, `Solicitante`, `Profesional`, `Paciente`; agenda: `Cita` (con `EstadoCita`); catálogo: `Especialidad`, `Tarifa`, `Publicacion`, `Valoracion`.
+* **Value Objects:** `Ubicacion`, `Disponibilidad`, `Matricula`, `Dinero`, `Vigencia`; enums `DiaSemana` y `EstadoCita`.
+* **Búsqueda (Strategy):** `Buscador` (contexto), `EstrategiaBusqueda` (interfaz), `BusquedaPorZona`, `BusquedaPorEspecialidad`, `BusquedaCombinada`, `FiltroBusqueda`.
+* **Asignación (Strategy):** `AsignacionStrategy`, `DisponibilidadHorariaStrategy`, `MatriculaProvinciaStrategy`.
+* **Observer / EventBus:** `Event` + eventos de `Cita` (`CitaCreada`, `CitaConfirmada`, `CitaCancelada`, `CitaReprogramada`, `CitaCompletada`), `Subject`, `Observer`, `EventBus`, `NotificadorEmail`, `AuditLogger`.
 
-- **Relaciones clave**
-  - `Solicitante` **1..*** `Paciente` (un solicitante puede gestionar varios pacientes)
-  - `Profesional` **1..*** `Disponibilidad`
-  - `Profesional` ***..*** `Especialidad`
-  - `Cita` **1..1** `Profesional` y **1..1** `Paciente`; referencia una `Ubicacion`
+**Relaciones clave**
 
-- **Patrones representados**
-  - **Strategy (búsqueda/asignación):** `Buscador` (contexto), `Estrategia` (interfaz),
-    `BusquedaPorZona`, `BusquedaPorEspecialidad`, `BusquedaCombinada`
-  - **Observer (notificaciones/auditoría):** `Observer`, `Subject`, `NotificadorEmail`,
-    `AuditLogger`, `Event` (eventos de `Cita`)
+* `Usuario` **1..1** `Ubicacion` (aplica por herencia a `Solicitante` y `Profesional`); además `Paciente` **1..1** `Ubicacion`.
+* `Solicitante` **1..*** `Paciente`.
+* `Profesional` **1..*** `Disponibilidad` y ***..*** `Especialidad`; **1..*** `Matricula`.
+* `Cita` **1..1** `Profesional` y **1..1** `Paciente`; **1..1** `Ubicacion`; asociación opcional con `Dinero`.
+* `Valoracion` → `Profesional` y `Paciente`.
 
-### Diagrama de bases de datos
+**Notas de lectura**
 
-- **[Diagrama de base de datos](app/docs/uml/db-uml-v1.svg)**
+* `Cita` **implementa `Subject`** y **dispara eventos**; el **`EventBus`** desacopla emisores de observadores.
+* `Buscador` es el **contexto Strategy**: permite cambiar la estrategia de búsqueda en tiempo de ejecución.
+
+### Diagrama de base de datos
+
+- **[Ver diagrama de base de datos](app/docs/uml/db-uml-v1.svg)**
+
+> Nota: el diagrama de DB se está alineando con el dominio actual. Hoy sirve como referencia de tablas, claves y relaciones principales.
+
 
 
 ---
