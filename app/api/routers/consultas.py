@@ -14,6 +14,7 @@ from app.api.dependencies import (
     get_profesional_repository,
     get_paciente_repository,
     get_db,
+    get_current_user,
 )
 from app.api.event_bus import get_event_bus
 from app.api.policies import IntegrityPolicies
@@ -30,7 +31,7 @@ from app.domain.eventos import (
     CitaCompletada,
     CitaReprogramada,
 )
-from app.domain.observers.observadores import EventBus
+from app.domain.observers.observadores import EventBus, NotificadorEmail
 
 router = APIRouter()
 
@@ -293,10 +294,23 @@ def confirmar_consulta(
     consulta_id: UUID,
     repo: ConsultaRepository = Depends(get_consulta_repository),
     event_bus: EventBus = Depends(get_event_bus),
+    current_user = Depends(get_current_user),
 ):
     """
     Confirma una consulta pendiente.
-    Publica evento CitaConfirmada en el EventBus para notificaciones.
+    
+    **Requiere autenticación**: Paciente o Profesional pueden confirmar.
+    
+    - **Paciente**: Puede confirmar si es el dueño de la cita
+    - **Profesional**: Puede confirmar si es el asignado a la cita
+    
+    Cuando se confirma:
+    1. Valida que la cita le pertenezca al usuario autenticado
+    2. Adjunta el NotificadorEmail (Observer) para enviar notificaciones
+    3. Cambia el estado a CONFIRMADA
+    4. Publica evento CitaConfirmada con el ID y rol del confirmante
+    
+    El Observer enviará automáticamente emails a ambas partes.
     """
     consulta = repo.obtener_por_id(consulta_id)
 
@@ -306,11 +320,30 @@ def confirmar_consulta(
             detail=f"Consulta con ID {consulta_id} no encontrada",
         )
 
+    es_paciente = consulta.paciente_id == current_user.id
+    es_profesional = consulta.profesional_id == current_user.id
+    
+    if not (es_paciente or es_profesional):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para confirmar esta consulta.",
+        )
+
     try:
-        consulta.confirmar()
+        notificador = NotificadorEmail()
+        consulta.attach(notificador)
+        
+        rol = "paciente" if es_paciente else "profesional"
+        confirmado_por = f"{rol}:{current_user.id}"
+        
+        consulta.confirmar(confirmado_por=confirmado_por)
+        
         consulta_actualizada = repo.actualizar(consulta)
 
-        evento = CitaConfirmada(cita_id=consulta_id)
+        evento = CitaConfirmada(
+            cita_id=consulta_id,
+            confirmado_por=confirmado_por
+        )
         event_bus.publicar(evento)
 
         return consulta_actualizada
@@ -327,10 +360,17 @@ def cancelar_consulta(
     motivo: str = None,
     repo: ConsultaRepository = Depends(get_consulta_repository),
     event_bus: EventBus = Depends(get_event_bus),
+    current_user = Depends(get_current_user),
 ):
     """
     Cancela una consulta.
-    Publica evento CitaCancelada en el EventBus para notificaciones.
+    
+    **Requiere autenticación**: Paciente o Profesional pueden cancelar.
+    
+    - **Paciente**: Puede cancelar si es el dueño de la cita
+    - **Profesional**: Puede cancelar si es el asignado a la cita
+    
+    El Observer enviará notificaciones automáticas a ambas partes.
     """
     consulta = repo.obtener_por_id(consulta_id)
 
@@ -340,11 +380,30 @@ def cancelar_consulta(
             detail=f"Consulta con ID {consulta_id} no encontrada",
         )
 
+    es_paciente = consulta.paciente_id == current_user.id
+    es_profesional = consulta.profesional_id == current_user.id
+    
+    if not (es_paciente or es_profesional):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para cancelar esta consulta.",
+        )
+
     try:
-        consulta.cancelar(motivo=motivo)
+        notificador = NotificadorEmail()
+        consulta.attach(notificador)
+        
+        rol = "paciente" if es_paciente else "profesional"
+        cancelado_por = f"{rol}:{current_user.id}"
+        
+        consulta.cancelar(motivo=motivo, cancelado_por=cancelado_por)
         repo.actualizar(consulta)
 
-        evento = CitaCancelada(cita_id=consulta_id, motivo=motivo)
+        evento = CitaCancelada(
+            cita_id=consulta_id, 
+            motivo=motivo,
+            cancelado_por=cancelado_por
+        )
         event_bus.publicar(evento)
 
         return None
@@ -361,10 +420,15 @@ def completar_consulta(
     notas_finales: str = None,
     repo: ConsultaRepository = Depends(get_consulta_repository),
     event_bus: EventBus = Depends(get_event_bus),
+    current_user = Depends(get_current_user),
 ):
     """
     Marca una consulta confirmada como completada.
-    Publica evento CitaCompletada en el EventBus para notificaciones.
+    
+    **Requiere autenticación**: Solo el **Profesional** puede completar.
+    
+    El profesional completa la cita después de brindar el servicio.
+    El Observer enviará notificaciones al paciente confirmando la finalización.
     """
     consulta = repo.obtener_por_id(consulta_id)
 
@@ -374,11 +438,23 @@ def completar_consulta(
             detail=f"Consulta con ID {consulta_id} no encontrada",
         )
 
+    if consulta.profesional_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo el profesional asignado puede completar esta consulta.",
+        )
+
     try:
+        notificador = NotificadorEmail()
+        consulta.attach(notificador)
+        
         consulta.completar(notas_finales=notas_finales)
         consulta_actualizada = repo.actualizar(consulta)
 
-        evento = CitaCompletada(cita_id=consulta_id, notas=notas_finales)
+        evento = CitaCompletada(
+            cita_id=consulta_id, 
+            notas=notas_finales
+        )
         event_bus.publicar(evento)
 
         return consulta_actualizada
@@ -395,10 +471,17 @@ def reprogramar_consulta(
     data: ConsultaUpdate,
     repo: ConsultaRepository = Depends(get_consulta_repository),
     event_bus: EventBus = Depends(get_event_bus),
+    current_user = Depends(get_current_user),
 ):
     """
     Reprograma una consulta (cambia fecha y horarios).
-    Publica evento CitaReprogramada en el EventBus para notificaciones.
+    
+    **Requiere autenticación**: Paciente o Profesional pueden reprogramar.
+    
+    - **Paciente**: Puede reprogramar si es el dueño de la cita
+    - **Profesional**: Puede reprogramar si es el asignado a la cita
+    
+    El Observer enviará notificaciones a ambas partes con el nuevo horario.
     """
     consulta = repo.obtener_por_id(consulta_id)
 
@@ -414,10 +497,22 @@ def reprogramar_consulta(
             detail="Para reprogramar se requiere fecha, hora_inicio y hora_fin",
         )
 
+    es_paciente = consulta.paciente_id == current_user.id
+    es_profesional = consulta.profesional_id == current_user.id
+    
+    if not (es_paciente or es_profesional):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para reprogramar esta consulta.",
+        )
+
     try:
         fecha_anterior = (
             f"{consulta.fecha} {consulta.hora_inicio}-{consulta.hora_fin}"
         )
+
+        notificador = NotificadorEmail()
+        consulta.attach(notificador)
 
         consulta.reprogramar(
             nueva_fecha=data.fecha,

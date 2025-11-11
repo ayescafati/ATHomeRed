@@ -140,11 +140,11 @@ class Cita(Subject):
             notas_finales: Notas finales de la consulta
 
         Raises:
-            ValueError: Si la cita no está confirmada
+            ValueError: Si la cita no está confirmada o reprogramada
         """
-        if self.estado != EstadoCita.CONFIRMADA:
+        if self.estado not in [EstadoCita.CONFIRMADA, EstadoCita.REPROGRAMADA]:
             raise ValueError(
-                f"Solo se pueden completar citas confirmadas. Estado actual: {self.estado.value}"
+                f"Solo se pueden completar citas confirmadas o reprogramadas. Estado actual: {self.estado.value}"
             )
 
         self.estado = EstadoCita.COMPLETADA
