@@ -1,31 +1,44 @@
-# Web API en construcción — AT Home Red
+# ATHomeRed – API (MVP)
 
 **Autores:**  
-- Gonzales Ch., Karen · [@KarenGonzalesCh](https://github.com/KarenGonzalesCh)
-- Llanes, Federico Nicolás · @usuario  
-- Rodríguez Puertas, Miguel Ignacio · [@mirpuertas](https://github.com/mirpuertas)  
+- Llanes, Federico Nicolás · [FedeLlanes](https://github.com/FedeLlanes)
+- Rodríguez Puertas, Miguel Ignacio · [mirpuertas](https://github.com/mirpuertas)  
 - Scafati, Ayelén Luján · [ayescafati](https://github.com/ayescafati)  
 
 **Materia:** Programación II – UNSAM  
-**Cuatrimestre:** 2C 2025  
+**Cuatrimestre:** 2C 2025 
 
 ---
 
-## Estado del proyecto
+## Índice
+- [¿Qué es ATHomeRed?](#qué-es-athomered)
+- [Problema que resuelve](#problema-que-resuelve)
+- [Valor que aporta](#valor-que-aporta)
+- [Estado actual del proyecto](#estado-actual-del-proyecto)
+  - [Estructura actual del repositorio](#estructura-actual-del-repositorio)
+  - [Implementaciones](#implementaciones)
+  - [Usuarios](usuarios)
+  - [Clases principales](#clases-principales)
+  - [Patrones y arquitectura](#patrones-y-arquitectura)
+- [Diagramas UML](#diagramas-uml)
+  - [Diagrama de clases](#diagrama-de-clases)
+  - [Diagrama de base de datos](#diagrama-de-base-de-datos)
+- [Tecnologías](#tecnologías)
+- [Configuración](#configuración)
+- [Puesta en marcha](#puesta-en-marcha)
+  - [Local](#local)
+  - [Con Docker (DB)](#con-docker-db)
+  - [Migraciones](#migraciones)
+- [API rapida](#api-rápida)
+- [Licencia](#licencia)
+  
+---
 
-> **AT Home Red** se encuentra actualmente **en construcción**.  
-> Este repositorio contiene el **diagrama de clases UML preliminar** y el **el esqueleto completo del modelo UML** en Python, siguiendo las convenciones de **PEP 8**  
-> Aún no se implementan comportamientos ni persistencia. El objetivo en esta etapa es consolidar la arquitectura, las clases principales y los patrones de diseño que darán forma al MVP.
->
-> Las próximas versiones incorporarán la implementación real de métodos, la persistencia de datos, los endpoints de la API y
-> un front de demostración que permitirá visualizar el flujo completo entre responsables, profesionales y pacientes.
+## ¿Qué es ATHomeRed?
 
-## Descripción general
-
-**AT Home Red** es una Web API que busca formalizar y digitalizar la conexión entre familias (representadas por un **Responsable**) y profesionales del área de la salud domiciliaria, como **acompañantes terapéuticos** y **enfermeros/as**.
+**AT Home Red** es una Web API que busca formalizar y digitalizar la conexión entre familias (representadas por un **Responsable/Solicitante**) y profesionales del área de la salud domiciliaria, como **acompañantes terapéuticos** y **enfermeros/as**.
 
 El sistema se apoya en una arquitectura **orientada a objetos en Python**, aplicando los patrones **Observer** y **Strategy** para permitir un diseño flexible, escalable y mantenible.
-
 
 ## Problema que resuelve
 
@@ -44,173 +57,393 @@ En Argentina, tanto la enfermería domiciliaria como el acompañamiento terapéu
 - **Para los pacientes y responsables:** acceso rápido a profesionales confiables y cercanos.  
 - **Para los profesionales:** visibilidad, formalización laboral y nuevas oportunidades de trabajo.  
 - **Para el sistema de salud:** disminución de la informalidad y bases para integración futura con obras sociales o prepagas.
+  
+## Estado actual del proyecto
 
+AT Home Red (FastAPI) implementa los flujos centrales de un sistema de reservas domiciliarias (usuarios, profesionales, búsqueda y reservas) sobre una arquitectura por capas con patrones **Strategy**, **Observer** y **Repository**.
 
-## Estructura del proyecto
+### Estructura actual del repositorio
+
 ```
-at_home_red/
-│
-├── asignacion/
-│   ├── observadores.py          # Patrón Observer (Subject, Observer, Notificadores)
-│   └── estrategia_asignacion.py # Estrategias para validar asignaciones de consulta
-│
-├── busqueda/
-│   ├── buscador.py              # Contexto de búsqueda (usa distintas estrategias)
-│   └── estrategia.py            # Clases Strategy (zona, especialidad, combinada)
-│
-├── modelos/
-│   ├── usuarios.py              # Usuario, Profesional, Responsable, Paciente
-│   ├── objetos_valor.py         # Ubicación (value object)
-│   ├── catalogo.py              # Publicación, Especialidad, Disponibilidad
-│   ├── eventos.py               # Clase Consulta (Subject del Observer)
-│   └── interaccion.py           # Clases auxiliares de relación y gestión
-│
-├── enumeraciones.py             # Estados y días de la semana
-├── __init__.py
-└── docs/uml/                    # Diagramas UML
+ATHomeRed-main/
+├── .env                               # Variables locales (no commitear)
+├── .gitattributes                     # Normaliza EOL/atributos en Git
+├── .gitignore                         # Archivos/carpetas a ignorar por Git
+├── alembic.ini                        # Configuración de Alembic
+├── LICENSE                            # Licencia del proyecto
+├── requirements.txt                   # Dependencias de Python (pip)
+├── out
+│   └── dominioUML                     # Diagramas UML 
+├── alembic/
+│   ├── env.py                         # Bootstrapping de Alembic (DB/session)
+│   ├── script.py.mako                 # Template para nuevas migraciones
+│   └── versions/
+│       ├── .gitkeep                   # Placeholder de carpeta
+│       └── 20251030_1951_bb44aaa63eb1_initial_migration.py  # Migración inicial
+├── app/
+│   ├── __init__.py
+│   ├── main.py                        # Instancia FastAPI y registra routers
+│   ├── api/
+│   │   ├── data.py                    # Datos de demo/mock (si aplica)
+│   │   ├── dependencies.py            # Dependencias (DI) para routers/servicios
+│   │   ├── event_bus.py               # Instancia y wiring del EventBus
+│   │   ├── policies.py                # IntegrityPolicies (reglas/validaciones)
+│   │   ├── schemas.py                 # DTOs Pydantic (request/response)
+│   │   └── routers/                   # Routers por recurso (contrato HTTP)
+│   │       ├── auth.py                # Router de autenticación real (MVP): registro, login y me con JWT
+│   │       ├── busqueda.py            # Router para búsqueda de profesionales (Strategy)
+│   │       ├── consultas.py           # Router para gestión de consultas/citas médicas
+│   │       ├── pacientes.py           # Router para gestión de pacientes
+│   │       ├── profesionales.py       # Router para gestión de profesionales
+│   │       └── valoraciones.py        # Router para gestión de valoraciones
+│   ├── domain/                        # Capa de dominio (sin dependencias infra)
+│   │   ├── enumeraciones.py           # Enums de dominio (EstadoCita, DíaSemana)
+│   │   ├── eventos.py                 # Eventos de dominio (CitaCreada, CitaConfirmada, etc.)
+│   │   ├── entities/
+│   │   │   ├── agenda.py              # Entidad Cita (lógica de estados/negocio)
+│   │   │   ├── catalogo.py            # Especialidad, Tarifa, Publicacion, FiltroBusqueda
+│   │   │   ├── usuarios.py            # Usuario/Profesional/Solicitante (Responsable)
+│   │   │   └── valoraciones.py        # Entidades de valoraciones/opiniones
+│   │   ├── observers/
+│   │   │   └── observadores.py        # Observer/Subject + EventBus (publish/subscribe, suscribir_observer); NotificadorEmail (demo print/log), AuditLogger (auditoría).
+│   │   ├── strategies/
+│   │   │   ├── buscador.py            # Contexto Strategy (ejecuta estrategias)
+│   │   │   ├── estrategia_asignacion.py # Estrategias de asignación/validación
+│   │   │   └── estrategia.py          # Contratos e implementaciones de búsqueda
+│   │   └── value_objects/
+│   │       └── objetos_valor.py       # Ubicacion, Disponibilidad, Matricula (VOs)
+│   ├── infra/                         # Capa de infraestructura (ORM/repos/servicios)
+│   │   ├── persistence/               # Modelos ORM y utilidades DB
+│   │   │   ├── agenda.py              # Mapeos ORM de agenda/citas
+│   │   │   ├── auth.py                # Modelos ORM para autenticación y auditoría
+│   │   │   ├── base.py                # Declarative Base y metadatos
+│   │   │   ├── database.py            # Engine/Session y conexión a DB
+│   │   │   ├── matriculas.py          # ORM de matrículas profesionales
+│   │   │   ├── paciente.py            # ORM de pacientes
+│   │   │   ├── perfiles.py            # ORM de perfiles/roles (si aplica)
+│   │   │   ├── publicaciones.py       # ORM de publicaciones de profesionales
+│   │   │   ├── relaciones.py          # Tablas relacionales auxiliares
+│   │   │   ├── servicios.py           # ORM de catálogo/servicios
+│   │   │   ├── ubicacion.py           # ORM de direcciones/geo
+│   │   │   ├── usuarios.py            # ORM de usuarios
+│   │   │   └── valoraciones.py        # ORM de valoraciones
+│   │   └──  repositories/              # Repositorios (aislan dominio de ORM/DB)
+│   │       ├── auth_repository.py     # Acceso persistente relacionado a auth
+│   │       ├── catalogo_repository.py # Acceso a catálogo (especialidades/servicios)
+│   │       ├── consulta_repository.py # Acceso a citas/consultas (CRUD/listados)
+│   │       ├── direccion_repository.py# Provincias/deptos/barrios
+│   │       ├── paciente_repository.py # Acceso a pacientes
+│   │       ├── profesional_repository.py # Acceso a profesionales
+│   │       ├── usuario_repository.py  # Acceso a usuarios, intentos/lock/último login
+│   │       └── valoracion_repository.py # Acceso a valoraciones
+│   ├── services/
+│   │   └── auth_service.py            # Servicio de autenticación
+│   ├── static/
+│   │   ├── app.js                     # UI mínima/demo (app)
+│   │   └── index.html                 # UI mínima/demo (app)
+├── docker/
+│   └── docker-compose.yml             # Orquestado de servicios (PostgreSQL, etc.)
+└── scripts/                           # Scripts utilitarios de desarrollo/ops
+    ├── apply_sql.py                   # Aplicar SQL raw contra la DB
+    ├── check_db.py                    # Chequeo rápido de conexión a DB
+    ├── create_schema.py               # Creación de esquema/namespaces
+    ├── init_db.py                     # Inicialización/seed básico
+    ├── smoke_auth.py                  # Smoke test de registro/login
+    └── test_connection.py             # Prueba de conexión y parámetros
 ```
 
-## Patrones de diseño aplicados
+### Implementaciones
 
-### Observer  
-Permite que los observadores (por ejemplo, `NotificadorEmail` o `AuditLogger`) sean informados automáticamente ante cambios en las consultas.  
-Esto desacopla la lógica de notificación del flujo principal.
+#### **API y routers por recurso**
+La aplicación se instancia en `app/main.py` y publica endpoints agrupados por dominio bajo `app/api/routers/` (auth, búsqueda, consultas, pacientes, profesionales y valoraciones). Esta organización mantiene el contrato HTTP estable y facilita la navegación desde `/docs`.
 
-### Strategy  
-Define distintas estrategias de búsqueda (`BusquedaPorZona`, `BusquedaPorEspecialidad`, `BusquedaCombinada`) utilizadas por el **Buscador**, que actúa como contexto.  
-Esto facilita ampliar el sistema sin modificar código existente.
+#### **Autenticación y seguridad** 
+El flujo está operativo con **hash Argon2** y **JWT HS256**. El router `app/api/routers/auth.py` (prefijo `/api/v1/auth`) expone: `POST /register-json` (201) para alta de usuario con **roles excluyentes** (profesional/solicitante; si no se especifica, default a solicitante); `POST /login` que devuelve `{access_token, token_type}` y aplica **bloqueo temporal por intentos fallidos** (`423 Locked` si bloqueado; `401` para credenciales inválidas); y `GET /me`, que lee `Authorization: Bearer <token>` y retorna el perfil básico. La lógica vive en `app/services/auth_service.py` (`hash_password/verify_password`, `crear_access_token/validar_access_token` con `AT_HOME_RED_SECRET` y `ACCESS_TOKEN_EXPIRE_MINUTES`) y el repositorio `app/infra/repositories/usuario_repository.py` gestiona `obtener_por_email`, `incrementar_intentos_fallidos`, `esta_bloqueado`, `resetear_intentos_fallidos` y `actualizar_ultimo_login`.
 
+#### **Persistencia y migraciones** 
+El modelo de datos está implementado en **SQLAlchemy** y versionado con **Alembic** (migración inicial en `alembic/versions/…`). La capa de **repositorios** realiza el mapeo ORM↔dominio y encapsula el CRUD. La base corre en **PostgreSQL** local o vía **Docker Compose**; la configuración se centraliza en `database.py`/`base.py` con `DATABASE_URL`.
+
+#### **Reservas / consultas** 
+El módulo de **consultas** ofrece creación (`POST /`, 201), lectura (`GET /{consulta_id}`), actualización (`PUT /{consulta_id}`) y cancelación (`DELETE /{consulta_id}`, 204), e incorpora **transiciones de estado** explícitas: confirmar (`POST /{consulta_id}/confirmar`), completar (`POST /{consulta_id}/completar`) y reprogramar (`POST /{consulta_id}/reprogramar`, requiere `fecha`, `hora_inicio`, `hora_fin`). Además, incluye listados filtrables por profesional (`GET /profesional/{profesional_id}` con `desde`, `hasta`, `solo_activas`) y por paciente (`GET /paciente/{paciente_id}` con `desde`, `solo_activas`). Antes de persistir se aplican **políticas de integridad** mediante `IntegrityPolicies` (profesional verificado/activo, pertenencia del paciente al solicitante, solicitante activo) y **reglas de negocio** (fin > inicio, no fechas pasadas y **anti-solapamiento**). La **ubicación** se modela como `Ubicacion` (VO) a partir del DTO y, provisoriamente, se persiste usando la **dirección del profesional** como `direccion_id`. Cada transición publica su **evento de dominio** en el `EventBus` (`CitaCreada`, `CitaConfirmada`, `CitaCancelada`, `CitaCompletada`, `CitaReprogramada`), como se verá en **Notificaciones (Observer)** y en la sección **Patrones y arquitectura**.
+
+#### **Búsqueda y asignación (Strategy)** 
+El router de búsqueda construye un `FiltroBusqueda` a partir del DTO, **resuelve la especialidad por nombre→ID** usando el catálogo (404 si no existe) y **valida ID** cuando corresponde. En función de los criterios, selecciona dinámicamente la estrategia del dominio (`BusquedaCombinada`, `BusquedaPorEspecialidad` o `BusquedaPorZona`) y ejecuta el **contexto `Buscador`**. Endpoints: `POST /profesionales` (retorna `profesionales`, `total` y `criterios_aplicados`), `GET /especialidades` (lista desde DB), `GET /ubicaciones/provincias`, `GET /ubicaciones/provincias/{provincia_id}/departamentos` y `GET /ubicaciones/departamentos/{departamento_id}/barrios`. Si no se especifica **ningún criterio válido** se responde 400; nombres/IDs de especialidad inexistentes devuelven 404; errores inesperados, 500. Como se verá en **Patrones y arquitectura**, este diseño permite **cambiar estrategias sin tocar los endpoints**.
+
+#### **Notificaciones (Observer)** 
+El sistema emite **eventos de dominio** y los procesa mediante un **EventBus**. El bus admite dos modalidades de suscripción: **handlers funcionales** (`suscribir(tipo, handler)`) y **observers tradicionales** (`suscribir_observer(tipo, observer)`), ambos definidos en `app/domain/observers/observadores.py`. En modo demo están activos: `NotificadorEmail` (imprime por consola) y `AuditLogger` (registra en logs). La instancia y el wiring viven en `app/api/event_bus.py`. Está **preparado para SMTP** vía variables de entorno, como se verá en **Patrones y arquitectura**.
+
+#### **Operativa y utilidades** 
+El repositorio incluye **Docker Compose** para la DB y **scripts de verificación** (smoke de auth, conexión y set-up) para acelerar el arranque local. Se provee `.env.example` con las variables críticas y la documentación **OpenAPI/Swagger UI** generada automáticamente por FastAPI.
+
+### Usuarios
+
+- **Usuario (abstracta).** Persona con cuenta de acceso que sirve como base para los dos roles operativos del sistema. Atributos: `id`, `nombre`, `apellido`, `email`, `celular`, `Ubicacion`, `activo` (True por defecto). Métodos útiles: `nombre_completo`, `activar`/`desactivar` y `datos_contacto`.
+
+- **Profesional.** Hereda de `Usuario` y ofrece servicios de salud. Campos específicos: `verificado` (bool), `especialidades` (`Especialidad`), `disponibilidades` (`Disponibilidad`) y `matriculas` (`Matricula`). Expone `agregar_disponibilidad` para gestionar su agenda.
+
+- **Solicitante.** Hereda de `Usuario` y gestiona turnos propios o de personas a su cargo. Mantiene una lista de `pacientes` y el método `agregar_paciente`. En casos de dependientes, el **email/celular de contacto** se toma del Solicitante.
+
+- **Paciente.** Persona atendida; **no** hereda de `Usuario` (puede no tener cuenta). Atributos: `id`, `nombre`, `apellido`, `fecha_nacimiento`, `Ubicacion`, `solicitante_id`, `relacion` (p. ej. `"self"`, `"hijo/a"`, `"tutor/a"`), `notas`. Métodos de conveniencia: `edad(hoy)`, `es_menor_de_edad()`, `es_auto_gestionado()`.
+
+**Nota de diseño.** Se separa explícitamente “quién tiene cuenta” (Usuario) de “quién recibe la atención” (Paciente). Esto permite que un **Solicitante** administre varios **Pacientes** y centraliza los datos de contacto. `Ubicacion` es un value object compartido; la verificación de profesionales y otras reglas viven fuera de estas clases (policies/servicios).
+
+
+### Clases principales
+
+La siguiente tabla resume las clases, value objects y componentes relevantes tal como están nombrados e implementados en el repositorio. Útil para referencia rápida durante la defensa.
+
+###### Entidades y value objects
+
+| Clase / Estructura                | Rol en el sistema (ubicación) |
+|-----------------------------------|--------------------------------|
+| `Usuario` *(abstracta)*           | Base de usuarios. `app/domain/entities/usuarios.py` |
+| `Profesional`                     | Ofrece servicios; tiene `especialidades`, `disponibilidades` y `matriculas`. `entities/usuarios.py` |
+| `Solicitante` *(Responsable)*     | Gestiona turnos de uno o varios `Paciente`. `entities/usuarios.py` |
+| `Paciente`                        | Persona atendida (puede no ser usuario). `entities/usuarios.py` |
+| `Cita` *(Consulta en API)*        | Turno con estados y métodos de negocio (`confirmar`, `cancelar`, `completar`, `reprogramar`; `puede_modificarse`). `app/domain/entities/agenda.py` |
+| `Ubicacion` *(value object)*      | Dirección/lat-long y validaciones. `app/domain/value_objects/objetos_valor.py` |
+| `Disponibilidad` *(value object)* | Días/horarios de trabajo. `value_objects/objetos_valor.py` |
+| `Matricula` *(value object)*      | Datos de matrícula profesional. `entities/usuarios.py` |
+| `Especialidad`                    | Tipo de servicio. `app/domain/entities/catalogo.py` |
+| `Tarifa`                          | Precio/vigencia por especialidad. `entities/catalogo.py` |
+| `Publicacion`                     | Info pública del profesional. `entities/catalogo.py` |
+| `FiltroBusqueda`                  | Criterios (zona, especialidad, texto). `entities/catalogo.py` |
+
+##### Autenticación
+
+| Componente / DTO         | Rol (ubicación) |
+|--------------------------|-----------------|
+| `AuthService`            | Lógica de hash Argon2, JWT HS256, registro/login, intents/bloqueo. `app/services/auth_service.py` |
+| `UsuarioRepository`      | Acceso a usuarios: alta, búsquedas, intents, último login. `app/infra/repositories/usuario_repository.py` |
+| `RegisterRequest`        | DTO de registro. `app/api/schemas.py` |
+| `LoginRequest`           | DTO de login. `app/api/schemas.py` |
+| `TokenSchema`            | Respuesta `{access_token, token_type}`. `app/api/schemas.py` |
+| `auth.py` (router)       | Endpoints `/register-json` (201), `/login`, `/me` (Bearer). `app/api/routers/auth.py` |
+
+##### Búsqueda y asignación (Strategy)
+
+| Clase / Interfaz            | Rol (módulo / archivo) |
+|-----------------------------|------------------------|
+| `Buscador`                  | Contexto que aplica la estrategia. `app/domain/strategies/buscador.py` |
+| `Estrategia`                | Contrato de estrategias. `app/domain/strategies/estrategia.py` |
+| `BusquedaPorZona`           | Estrategia por ubicación. `app/domain/strategies/estrategia.py` |
+| `BusquedaPorEspecialidad`   | Estrategia por especialidad. `app/domain/strategies/estrategia.py` |
+| `BusquedaCombinada`         | Combina criterios (zona + especialidad). `app/domain/strategies/estrategia.py` |
+| `EstrategiaAsignacion`      | Políticas de asignación/validación (p. ej., disponibilidad, matrícula). `app/domain/strategies/estrategia_asignacion.py` |
+
+##### Notificaciones (Observer)
+
+| Clase / Servicio   | Rol (ubicación) |
+|--------------------|------------------|
+| `Observer` / `Subject` | Base del patrón. `app/domain/observers/observadores.py` |
+| `EventBus`         | Publicación/suscripción: `suscribir(tipo, handler)` y `suscribir_observer(tipo, observer)`. Clase en `domain/observers/observadores.py`; instancia/wiring en `app/api/event_bus.py`. |
+| `NotificadorEmail` | Observador demo: simula envío por consola para eventos de cita. `app/domain/observers/observadores.py` |
+| `AuditLogger`      | Observador de auditoría (loggea `[AUDIT] Evento: ...`). `app/domain/observers/observadores.py` |
+| Eventos de `Cita`  | `CitaCreada`, `CitaConfirmada`, `CitaCancelada`, `CitaCompletada`, `CitaReprogramada`. `app/domain/eventos.py` |
+
+###### Enumeraciones
+
+| Enum            | Observación (ubicación) |
+|-----------------|-------------------------|
+| `EstadoCita`    | Estados reales del flujo (p. ej., `PENDIENTE`, `CONFIRMADA`, `COMPLETADA`, `CANCELADA`, `REPROGRAMADA`). **Usar exactamente los definidos en** `app/domain/enumeraciones.py`. |
+| `DiaSemana`     | LUNES..DOMINGO para disponibilidades. `app/domain/enumeraciones.py` |
+
+
+  
+### Patrones y arquitectura
+
+El proyecto aplica tres patrones de diseño principales dentro de una arquitectura por capas: **Strategy**, **Observer** y **Repository**. Además, se utilizan decoradores de Python de forma transversal (por ejemplo, en los routers de FastAPI), aunque eso no implica que el patrón GoF *Decorator* esté modelado como objeto de dominio; es simplemente el uso idiomático del lenguaje y del framework.
+
+El patrón **Strategy** es el eje del módulo de búsqueda/asignación. Las interfaces y estrategias viven en `app/domain/strategies/` (por ejemplo, `estrategia.py`, `buscador.py` y `estrategia_asignacion.py`) y se invocan desde el router `app/api/routers/busqueda.py`. Esta organización permite intercambiar la lógica de búsqueda o de asignación sin tocar los endpoints: el router selecciona la estrategia activa y la ejecuta. Actualmente hay al menos dos variantes implementadas para cubrir escenarios de búsqueda distintos.
+
+El **Observer** se implementa con un *EventBus* simple para reaccionar a eventos de dominio sin acoplar emisores y efectos colaterales. El bus está en `app/api/event_bus.py`, los eventos en `app/domain/eventos.py` y los observadores (por ejemplo, un `NotificadorEmail`) en `app/domain/observers/`. En el estado actual funciona en **modo demo** (notifica por consola con `print`). Para producción se prevé vincularlo a un servidor de correo (SMTP) configurado vía `.env` y, si hace falta, sumar otros observadores como auditoría o webhooks sin modificar el código que emite los eventos.
+
+El patrón **Repository** separa el dominio de los detalles de persistencia. Los repositorios concretos residen en `app/infra/repositories/` y los modelos/ORM y utilidades de base de datos en `app/infra/persistence/`. Aunque no es un patrón GoF, es un patrón de arquitectura estándar en la industria y permite mantener el dominio independiente de SQLAlchemy y del esquema físico, facilitando pruebas, mocks y cambios de tecnología.
+
+La **arquitectura en capas** se refleja en tres espacios principales: `app/domain/` (entidades, eventos, value objects y estrategias, sin dependencias de infraestructura), `app/infra/` (ORM, repositorios y servicios de aplicación como autenticación) y `app/api/` (routers, dependencias, esquemas, *event bus* y *policies*). Esta separación hace que el dominio no dependa de la infraestructura y que la API publique casos de uso manteniendo el acoplamiento bajo control.
+
+En cuanto al **estado actual**, el proyecto ya cuenta con Strategy operativo en el router de búsqueda, Observer funcional en modo demostrativo, y Repository para aislar dominio y persistencia; además, hay esquema de base de datos y endpoints integrados a la API. 
+
+---
 
 ## Diagramas UML
 
-- **[Diagrama de clases](at_home_red/docs/uml/clases-uml-v1.svg)**
-- **[Diagrama de DB](at_home_red/docs/uml/db-uml-v1.svg)**
-- **[Diagrama UI](at_home_red/docs/uml/ui-uml-v1.svg)**
+El proyecto incluye **dos** diagramas UML: uno de **clases** (dominio + patrones) y otro de **base de datos**.
 
-> **Versión preliminar:**
-> El modelado UML se encuentra en construcción. Esta es **la primera versión**, elaborada para representar las bases del sistema y comenzar a integrar los patrones de diseño. En próximas iteraciones se unificarán ambos diagramas y se ajustarán los nombres, relaciones y estereotipos según la evolución del código.
+### Diagrama de clases
 
-Para reflejar la estructura y los patrones aplicados, el proyecto incluye **dos diagramas de clases complementarios**, que representan distintos niveles de detalle del sistema.
+- **[Ver diagrama de clases](out/dominioUML/ATHomeRed_Domain_UML.png)**
 
-#### 1. Diagrama inferior (modelo funcional y búsqueda)
+El diagrama refleja el estado actual del **dominio** y los **patrones** aplicados. 
 
-El **diagrama inferior** (con fondo lila) muestra el **modelo funcional del MVP**, incluyendo las clases principales del sistema:
-`Usuario`, `Responsable`, `Profesional`, `Paciente`, `Ubicacion`, `Disponibilidad`, `Publicacion` y `Consulta`.
+**Qué muestra**
 
-Además, este diagrama incorpora el **patrón Strategy** aplicado al módulo de **búsqueda de profesionales**, con las clases:
-`Buscador`, `EstrategiaBusqueda`, `BusquedaPorZona`, `BusquedaPorEspecialidad` y `BusquedaCombinada`.
-Esto permite ver cómo el patrón se integra de manera directa con las entidades del sistema.
+* **Entidades principales:** `Usuario` *(abstracta)*, `Solicitante`, `Profesional`, `Paciente`; agenda: `Cita` (con `EstadoCita`); catálogo: `Especialidad`, `Tarifa`, `Publicacion`, `Valoracion`.
+* **Value Objects:** `Ubicacion`, `Disponibilidad`, `Matricula`, `Dinero`, `Vigencia`; enums `DiaSemana` y `EstadoCita`.
+* **Búsqueda (Strategy):** `Buscador` (contexto), `EstrategiaBusqueda` (interfaz), `BusquedaPorZona`, `BusquedaPorEspecialidad`, `BusquedaCombinada`, `FiltroBusqueda`.
+* **Asignación (Strategy):** `AsignacionStrategy`, `DisponibilidadHorariaStrategy`, `MatriculaProvinciaStrategy`.
+* **Observer / EventBus:** `Event` + eventos de `Cita` (`CitaCreada`, `CitaConfirmada`, `CitaCancelada`, `CitaReprogramada`, `CitaCompletada`), `Subject`, `Observer`, `EventBus`, `NotificadorEmail`, `AuditLogger`.
 
-#### 2. Diagrama superior (Observer + Strategy en asignación)
+**Relaciones clave**
 
-El **diagrama superior** (con fondo blanco) se centra en los **patrones de diseño** aplicados al proceso de **asignación y notificación de consultas**.
-En este se representan:
+* `Usuario` **1..1** `Ubicacion` (aplica por herencia a `Solicitante` y `Profesional`); además `Paciente` **1..1** `Ubicacion`.
+* `Solicitante` **1..*** `Paciente`.
+* `Profesional` **1..*** `Disponibilidad` y ***..*** `Especialidad`; **1..*** `Matricula`.
+* `Cita` **1..1** `Profesional` y **1..1** `Paciente`; **1..1** `Ubicacion`; asociación opcional con `Dinero`.
+* `Valoracion` → `Profesional` y `Paciente`.
 
-* **Observer:** `Subject`, `Observer`, `NotificadorEmail`, `AuditLogger`, aplicados sobre la clase `Cita` (equivalente a `Consulta` en el MVP).
-* **Strategy (asignación):** `AsignacionStrategy`, `DisponibilidadHorariaStrategy` y `MatriculaProvinciaStrategy`, que nos definen las políticas de validación al asignar un profesional.
+**Notas de lectura**
 
-#### 3. Estado actual y próximos pasos
+* `Cita` **implementa `Subject`** y **dispara eventos**; el **`EventBus`** desacopla emisores de observadores.
+* `Buscador` es el **contexto Strategy**: permite cambiar la estrategia de búsqueda en tiempo de ejecución.
 
-Ambos diagramas fueron desarrollados en paralelo y actualmente presentan **nombres y estructuras parcialmente distintas** (por ejemplo, `Cita` y `Consulta`, o la duplicación de estrategias).
-Esto es **intencional en esta primera versión**, ya que el objetivo es explorar los dos niveles de modelado:
+### Diagrama de base de datos
 
-* El **modelo funcional** (entidades principales del MVP).
-* La **arquitectura de patrones** que se aplicará sobre él.
+- **[Ver diagrama de base de datos](app/docs/uml/db-uml-v1.svg)**
 
-
-## Clases principales
-
-| Clase         | Rol en el sistema |
-|----------------|------------------|
-| `Usuario` (abstracta) | Clase base con atributos y métodos comunes. |
-| `Profesional` | Representa acompañantes terapéuticos o enfermeros verificados. |
-| `Responsable` | Usuario que gestiona las consultas del paciente. |
-| `Paciente` | Persona atendida, con datos y ubicación. |
-| `Consulta` | Cita entre un Responsable y un Profesional. |
-| `Buscador` | Contexto que centraliza la búsqueda de profesionales. |
-| `EstrategiaBusqueda` | Interfaz para las estrategias concretas. |
-| `Disponibilidad` | Días y horarios de trabajo del profesional. |
-| `Publicacion` | Información visible de los servicios del profesional. |
-| `Ubicacion` | Objeto de valor que modela la localización geográfica. |
+> Nota: el diagrama de DB se está alineando con el dominio actual. Hoy sirve como referencia de tablas, claves y relaciones principales.
 
 
 
-## Clases principales
+---
 
-### Modelo funcional (MVP)
+## Tecnologías
 
-| Clase                        | Rol en el sistema                                                |
-| ---------------------------- | ---------------------------------------------------------------- |
-| `Usuario` *(abstracta)*      | Clase base para todos los usuarios.                              |
-| `Profesional`                | Representa acompañantes terapéuticos o enfermeros verificados.   |
-| `Responsable`                | Usuario que gestiona las consultas del paciente.                 |
-| `Paciente`                   | Persona atendida, con datos y ubicación.                         |
-| `Ubicacion` *(value object)* | Modela dirección, latitud, longitud y validaciones geográficas.  |
-| `Disponibilidad`             | Días y horarios de trabajo del profesional.                      |
-| `Especialidad`               | Describe tipo de servicio y tarifa.                              |
-| `Publicacion`                | Contiene información visible de los servicios ofrecidos.         |
-| `Consulta`                   | Cita entre un Responsable y un Profesional, con estados y notas. |
-| `FiltroBusqueda`             | Define los criterios de filtrado (zona, especialidad, horario).  |
+- **Lenguaje**: Python 3.11+
+- **API**: FastAPI
+- **Servidor de aplicación:** Uvicorn
+- **Validación de datos:** Pydantic
+- **ORM**: SQLAlchemy
+- **DB**: PostgreSQL
+- **Migraciones**: Alembic
+- **Autenticación / seguridad:** JWT (HS256, `python-jose`) + Argon2 (`passlib`)
+- **Configuración:** variables de entorno `.env` (python-dotenv)
+- **Contenedores**: Docker Compose (servicio de Postgres)
+- **Docs:** OpenAPI / Swagger UI generadas por FastAPI
 
-### Búsqueda (Strategy)
+---
 
-| Clase                              | Rol                                             |
-| ---------------------------------- | ----------------------------------------------- |
-| `Buscador`                         | Contexto que aplica una estrategia de búsqueda. |
-| `EstrategiaBusqueda` *(interface)* | Contrato para las estrategias concretas.        |
-| `BusquedaPorZona`                  | Estrategia basada en ubicación geográfica.      |
-| `BusquedaPorEspecialidad`          | Estrategia basada en tipo de servicio.          |
-| `BusquedaCombinada`                | Combina varios criterios simultáneamente.       |
+## Configuración
 
+Copiá el ejemplo y completá valores:
+```bash
+cp .env.example .env
+```
 
-### Asignación y notificaciones
+Variables relevantes:
+- `DATABASE_URL` *(o variables individuales para host/puerto/usuario)*
+- `AT_HOME_RED_SECRET` *(clave JWT)*
+- `ACCESS_TOKEN_EXPIRE_MINUTES` *(minutos de validez del token)*
+- **Observer (opcional para producción):**
+  - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`
 
-| Clase                           | Rol                                                           |
-| ------------------------------- | ------------------------------------------------------------- |
-| `Subject`                       | Parte del patrón Observer; administra observadores.           |
-| `Observer`                      | Interfaz base para observadores.                              |
-| `NotificadorEmail`              | Envía notificaciones cuando cambia el estado de una consulta. |
-| `AuditLogger`                   | Registra eventos y auditorías del sistema.                    |
-| `AsignacionStrategy`            | Contrato para políticas de validación de asignación.          |
-| `DisponibilidadHorariaStrategy` | Verifica disponibilidad del profesional.                      |
-| `MatriculaProvinciaStrategy`    | Valida matrícula y jurisdicción del profesional.              |
+---
 
+## Puesta en marcha
 
-### Soporte / Enumeraciones
+> Requisitos: *(Opcional)* Docker Desktop · *(Opcional)* Conda/Mamba  
+> *(La versión de Python está detallada en **Tecnologías**.)*
 
-| Enum / Clase | Descripción                                            |
-| ------------ | ------------------------------------------------------ |
-| `EstadoCita` | Enum con estados: *SOLICITADA, CONFIRMADA, CANCELADA*. |
-| `DiaSemana`  | Enum con los días: *LU, MA, MI, JU, VI, SA, DO*.       |
-| `Event`      | Estructura de evento usada por el patrón Observer.     |
+### 1) Clonar y preparar variables
+Cloná el repo y creá tu `.env` a partir del ejemplo:
+    
+    # Clonar el repo y entrar
+    git clone <URL-de-tu-repo>
+    cd <carpeta-del-repo>
+    
+    # Crear .env a partir del ejemplo y completar valores (DB, SECRET, etc.)
+    cp .env.example .env
 
+### 2A) Opción local (venv)
+Creá un entorno virtual, instalá dependencias, corré migraciones y levantá la API:
+    
+    # Crear y activar entorno
+    python -m venv .venv
+    # Windows
+    .venv\Scripts\activate
+    # Linux/Mac
+    source .venv/bin/activate
+    
+    # Instalar dependencias
+    pip install -r requirements.txt
+    
+    # Migraciones
+    alembic upgrade head
+    
+    # Levantar la API
+    uvicorn app.main:app --reload
+    # Abrí http://localhost:8000/docs
 
-## Instalación (modo local)
+### 2B) Opción con Conda/Mamba (alternativa)
+Si preferís Conda/Mamba:
+    
+    # Crear y activar entorno
+    mamba create -n athomered python=3.11 -y   # o conda create ...
+    conda activate athomered
+    
+    # Instalar dependencias
+    pip install -r requirements.txt
+    
+    # Migraciones
+    alembic upgrade head
+    
+    # Correr API
+    uvicorn app.main:app --reload
 
-1. Clonar el repositorio:
-   ```bash
-   git clone https://github.com/<tu-usuario>/ATHomeRed.git
-   ```
-2. Crear entorno virtual:
-   ```bash
-   python -m venv venv
-   ```
-3. Activar entorno:
-   ```bash
-   venv\Scripts\activate     # En Windows
-   source venv/bin/activate  # En Linux
-   ```
-4. Instalar dependencias (en futuras versiones):
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 2C) Docker (solo base de datos)
+Levantá PostgreSQL con Docker y usá tu entorno local para la API:
+    
+    # Levantar PostgreSQL en Docker
+    docker compose -f docker/docker-compose.yml up -d
+    
+    # Aplicar migraciones contra la DB de Docker
+    alembic upgrade head
+    
+    # Levantar la API
+    uvicorn app.main:app --reload
 
+### 3) Comprobación rápida
+Probá que la API responda y el login funcione:
+    
+    # Documentación interactiva
+    # http://localhost:8000/docs
+    
+    # Ejemplo de login (reemplazar email/password por los tuyos)
+    curl -X POST "http://localhost:8000/api/v1/auth/login" ^
+      -H "Content-Type: application/json" ^
+      -d "{\"email\":\"probando@gmail.com\",\"password\":\"Prueba123.\"}"
 
-## Futuro del proyecto
+> Tip: en `scripts/` hay utilidades como `check_db.py` / `test_connection.py` (conexión DB) y `smoke_auth.py` (flujo de auth).
 
- Próximas etapas planificadas:
-- Implementación real de los métodos en clases principales.  
-- Conexión con base de datos.  
-- Creación de endpoints con **FastAPI**.  
-- Autenticación básica y gestión de usuarios.  
-- Frontend de demostración.  
+### 4) Migraciones (referencia)
+Comandos útiles de Alembic:
+    
+    # Crear una nueva migración
+    alembic revision -m "descripcion" --autogenerate
+    
+    # Aplicar
+    alembic upgrade head
+    
+    # Revertir
+    alembic downgrade -1
+
+---
+
+## API rápida
+
+**Auth (MVP)** – prefijo `/api/v1/auth`
+- `POST /api/v1/auth/register-json` – registrar usuario
+- `POST /api/v1/auth/login` – login (devuelve `access_token`)
+- `GET /api/v1/auth/me` – perfil del usuario (requiere Bearer token)
+
+**Ejemplo de login (cURL)**
+```bash
+curl -X POST "http://localhost:8000/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"probando@gmail.com","password":"Prueba123."}'
+```
+---
+
+## Licencia
+
+Este proyecto se publica bajo la licencia incluida en [`LICENSE`](./LICENSE).
