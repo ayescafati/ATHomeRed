@@ -52,6 +52,7 @@ class EspecialidadSchema(BaseModel):
 
     id: int
     nombre: str
+    tarifa: Decimal
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -111,7 +112,7 @@ class PacienteCreate(BaseModel):
     )
     notas: Optional[str] = None
     ubicacion: UbicacionSchema
-    solicitante_id: UUID
+    solicitante_id: UUID  
 
 
 class PacienteResponse(BaseModel):
@@ -149,7 +150,7 @@ class ConsultaCreate(BaseModel):
 
     profesional_id: UUID
     paciente_id: UUID
-    solicitante_id: UUID
+    solicitante_id: UUID  
     fecha: date
     hora_inicio: time
     hora_fin: time
@@ -166,7 +167,7 @@ class ConsultaResponse(BaseModel):
     fecha: date
     hora_inicio: time
     hora_fin: time
-    estado: str
+    estado: str 
     ubicacion: UbicacionSchema
     motivo: Optional[str]
     notas: Optional[str]
