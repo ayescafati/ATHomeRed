@@ -3,7 +3,7 @@ Router para gestión de profesionales
 """
 
 from typing import List
-from uuid import UUID
+from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.schemas import (
@@ -28,9 +28,6 @@ from app.domain.enumeraciones import DiaSemana
 router = APIRouter()
 
 
-# Endpoints
-
-
 @router.post(
     "/",
     response_model=ProfesionalResponse,
@@ -45,7 +42,6 @@ def crear_profesional(
     Crea un nuevo profesional en el sistema.
     """
     try:
-        # Convertir schema a entidad de dominio
         ubicacion = Ubicacion(
             provincia=data.ubicacion.provincia,
             departamento=data.ubicacion.departamento,
@@ -56,7 +52,6 @@ def crear_profesional(
             longitud=data.ubicacion.longitud,
         )
 
-        # Validar y obtener especialidades desde el catálogo
         especialidades = []
         for esp_id in data.especialidades:
             especialidad = catalogo_repo.obtener_especialidad_por_id(esp_id)
@@ -67,7 +62,6 @@ def crear_profesional(
                 )
             especialidades.append(especialidad)
 
-        # Convertir disponibilidades
         disponibilidades = [
             Disponibilidad(
                 dias_semana=[DiaSemana(d) for d in disp.dias_semana],
@@ -77,7 +71,6 @@ def crear_profesional(
             for disp in (data.disponibilidades or [])
         ]
 
-        # Convertir matrículas
         matriculas = [
             Matricula(
                 numero=mat.numero,
@@ -87,9 +80,6 @@ def crear_profesional(
             )
             for mat in (data.matriculas or [])
         ]
-
-        # Crear entidad de dominio
-        from uuid import uuid4
 
         profesional = Profesional(
             id=uuid4(),
@@ -105,7 +95,6 @@ def crear_profesional(
             matriculas=matriculas,
         )
 
-        # Guardar en el repositorio
         profesional_creado = repo.crear(profesional)
 
         return profesional_creado
@@ -193,7 +182,6 @@ def actualizar_profesional(
         )
 
     if data.especialidades is not None:
-        # Validar y actualizar especialidades
         especialidades = []
         for esp_id in data.especialidades:
             especialidad = catalogo_repo.obtener_especialidad_por_id(esp_id)
@@ -236,7 +224,6 @@ def eliminar_profesional(
             detail=f"Profesional con ID {profesional_id} no encontrado",
         )
 
-    # Desactivar usando el método del repositorio
     repo.desactivar(profesional_id)
 
     return None
@@ -261,7 +248,6 @@ def verificar_profesional(
             detail=f"Profesional con ID {profesional_id} no encontrado",
         )
 
-    # Verificar usando el método del repositorio
     profesional_verificado = repo.verificar(profesional_id)
 
     return profesional_verificado

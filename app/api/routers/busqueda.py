@@ -9,7 +9,6 @@ from uuid import UUID
 from app.api.schemas import (
     BusquedaProfesionalRequest,
     BusquedaProfesionalResponse,
-    ProfesionalResponse,
 )
 from app.api.dependencies import (
     get_profesional_repository,
@@ -48,12 +47,22 @@ def buscar_profesionales(
     """
 
     try:
-        # Si viene nombre de especialidad sin ID, intentar resolverlo
+        if criterios.departamento and not criterios.provincia:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Se debe especificar la provincia si se indica el departamento.",
+            )
+
+        if criterios.barrio and not criterios.departamento:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Se debe especificar el departamento si se indica el barrio.",
+            )
+
         especialidad_id = criterios.especialidad_id
         especialidad_nombre = criterios.nombre_especialidad
 
         if especialidad_nombre and not especialidad_id:
-            # Resolver nombre → ID usando el catálogo
             especialidad = catalogo_repo.obtener_especialidad_por_nombre(
                 especialidad_nombre
             )
@@ -65,7 +74,6 @@ def buscar_profesionales(
                     detail=f"No se encontró la especialidad '{especialidad_nombre}'",
                 )
 
-        # Si viene ID, validar que existe
         if especialidad_id:
             especialidad = catalogo_repo.obtener_especialidad_por_id(
                 especialidad_id
@@ -75,7 +83,6 @@ def buscar_profesionales(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"No existe la especialidad con ID {especialidad_id}",
                 )
-            # Actualizar el nombre para usar en el filtro
             especialidad_nombre = especialidad.nombre
 
         filtro = FiltroBusqueda(
@@ -111,12 +118,10 @@ def buscar_profesionales(
         )
 
     except ValueError as ve:
-        # Errores de validación de filtros (de las estrategias)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve)
         )
     except Exception as e:
-        # Otros errores inesperados
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error en búsqueda: {str(e)}",

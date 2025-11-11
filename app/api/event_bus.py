@@ -8,13 +8,10 @@ lo sepa.
 
 from app.domain.observers.observadores import EventBus, NotificadorEmail
 
-# Instancia global del bus de eventos
 event_bus = EventBus()
 
-# Crear observadores y suscribirlos a todos los eventos de cita
 notificador_email = NotificadorEmail()
 
-# Eventos que disparan notificaciones
 _EVENTOS_NOTIFICABLES = [
     "cita.creada",
     "cita.confirmada",

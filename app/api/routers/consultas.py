@@ -111,7 +111,6 @@ def crear_consulta(
         )
 
         for c in consultas_existentes:
-            # Detectar solapamiento de horarios
             if (data.hora_inicio < c.hora_fin) and (
                 data.hora_fin > c.hora_inicio
             ):
@@ -120,7 +119,6 @@ def crear_consulta(
                     detail="El profesional no está disponible en el horario seleccionado",
                 )
 
-        # Crear ubicación
         ubicacion = Ubicacion(
             provincia=data.ubicacion.provincia,
             departamento=data.ubicacion.departamento,
@@ -131,7 +129,6 @@ def crear_consulta(
             longitud=data.ubicacion.longitud,
         )
 
-        # Crear cita
         cita = Cita(
             id=uuid4(),
             profesional_id=data.profesional_id,
@@ -145,8 +142,6 @@ def crear_consulta(
             notas="",
         )
 
-        # Guardar en el repositorio (crear dirección desde ubicación)
-        # Por ahora, usar la dirección del profesional
         cita_creada = repo.crear(
             cita,
             direccion_id=(
@@ -156,8 +151,6 @@ def crear_consulta(
             ),
         )
 
-        # PUBLICAR EVENTO: CitaCreada
-        # El EventBus notificará automáticamente a todos los observadores
         evento = CitaCreada(
             cita_id=cita_creada.id,
             profesional_id=data.profesional_id,
@@ -269,7 +262,6 @@ def actualizar_consulta(
         )
 
     try:
-        # Actualizar campos permitidos
         if data.fecha:
             consulta.fecha = data.fecha
         if data.hora_inicio:
@@ -319,7 +311,6 @@ def confirmar_consulta(
         consulta.confirmar()
         consulta_actualizada = repo.actualizar(consulta)
 
-        # PUBLICAR EVENTO: CitaConfirmada
         evento = CitaConfirmada(cita_id=consulta_id)
         event_bus.publicar(evento)
 
@@ -354,7 +345,6 @@ def cancelar_consulta(
         consulta.cancelar(motivo=motivo)
         repo.actualizar(consulta)
 
-        # PUBLICAR EVENTO: CitaCancelada
         evento = CitaCancelada(cita_id=consulta_id, motivo=motivo)
         event_bus.publicar(evento)
 
@@ -389,7 +379,6 @@ def completar_consulta(
         consulta.completar(notas_finales=notas_finales)
         consulta_actualizada = repo.actualizar(consulta)
 
-        # PUBLICAR EVENTO: CitaCompletada
         evento = CitaCompletada(cita_id=consulta_id, notas=notas_finales)
         event_bus.publicar(evento)
 
@@ -427,9 +416,10 @@ def reprogramar_consulta(
         )
 
     try:
-        # Guardar valores anteriores para el evento
-        fecha_anterior = f"{consulta.fecha} {consulta.hora_inicio}-{consulta.hora_fin}"
-        
+        fecha_anterior = (
+            f"{consulta.fecha} {consulta.hora_inicio}-{consulta.hora_fin}"
+        )
+
         consulta.reprogramar(
             nueva_fecha=data.fecha,
             nueva_hora_inicio=data.hora_inicio,
@@ -437,7 +427,6 @@ def reprogramar_consulta(
         )
         consulta_actualizada = repo.actualizar(consulta)
 
-        # PUBLICAR EVENTO: CitaReprogramada
         fecha_nueva = f"{data.fecha} {data.hora_inicio}-{data.hora_fin}"
         evento = CitaReprogramada(
             cita_id=consulta_id,

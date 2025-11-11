@@ -15,9 +15,8 @@ from app.infra.repositories.usuario_repository import UsuarioRepository
 from app.infra.repositories.direccion_repository import DireccionRepository
 from app.infra.repositories.catalogo_repository import CatalogoRepository
 from app.services.auth_service import AuthService
-
-
-# Database Session
+from app.api.policies import IntegrityPolicies
+from fastapi.security import OAuth2PasswordBearer
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -30,9 +29,6 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
-
-
-# Repositories
 
 
 def get_profesional_repository(
@@ -77,20 +73,10 @@ def get_catalogo_repository(
     return CatalogoRepository(db)
 
 
-# Policies de Integridad
-
-
 def get_integrity_policies():
     """Dependency para acceder a las políticas de integridad"""
-    from app.api.policies import IntegrityPolicies
-
     return IntegrityPolicies
 
-
-# Authentication & Authorization
-
-from fastapi.security import OAuth2PasswordBearer
-from typing import Optional
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -109,7 +95,6 @@ async def get_current_user(
     """
     auth_service = AuthService(db)
 
-    # Validar token JWT
     payload = auth_service.validar_access_token(token)
     if not payload:
         raise HTTPException(
@@ -118,7 +103,6 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Extraer usuario_id del payload
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(
@@ -127,7 +111,6 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Buscar usuario en DB
     usuario_repo = UsuarioRepository(db)
     usuario = usuario_repo.obtener_por_id(user_id)
 
@@ -138,7 +121,6 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Verificar que el usuario esté activo
     if not getattr(usuario, "activo", True):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Usuario inactivo"

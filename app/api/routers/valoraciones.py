@@ -43,7 +43,6 @@ def crear_valoracion(
     - Verifica que no exista ya una valoración previa (opcional)
     """
     try:
-        # Validar que el profesional existe
         profesional = prof_repo.obtener_por_id(data.profesional_id)
         if not profesional:
             raise HTTPException(
@@ -51,7 +50,6 @@ def crear_valoracion(
                 detail=f"Profesional con ID {data.profesional_id} no encontrado",
             )
 
-        # Validar que el paciente exists
         paciente = pac_repo.obtener_por_id(data.paciente_id)
         if not paciente:
             raise HTTPException(
@@ -59,14 +57,12 @@ def crear_valoracion(
                 detail=f"Paciente con ID {data.paciente_id} no encontrado",
             )
 
-        # Verificar si ya existe una valoración
         if repo.existe_valoracion(data.profesional_id, data.paciente_id):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="El paciente ya ha valorado a este profesional",
             )
 
-        # Crear valoración
         valoracion = Valoracion(
             id=uuid4(),
             id_profesional=data.profesional_id,
@@ -76,7 +72,6 @@ def crear_valoracion(
             fecha=datetime.utcnow(),
         )
 
-        # Guardar
         valoracion_creada = repo.crear(valoracion)
 
         return valoracion_creada
@@ -167,7 +162,7 @@ def obtener_valoracion(
 def eliminar_valoracion(
     valoracion_id: UUID,
     repo: ValoracionRepository = Depends(get_valoracion_repository),
-    current_user=Depends(get_current_user),  # ✅ Autenticación implementada
+    current_user=Depends(get_current_user),
 ):
     """
     Elimina una valoración.
@@ -175,7 +170,6 @@ def eliminar_valoracion(
     Solo el paciente que creó la valoración puede eliminarla.
     Requiere autenticación (Bearer token).
     """
-    # Validar que la valoración existe
     valoracion = repo.obtener_por_id(valoracion_id)
 
     if not valoracion:
@@ -184,14 +178,12 @@ def eliminar_valoracion(
             detail=f"Valoración con ID {valoracion_id} no encontrada",
         )
 
-    # ✅ Validar permisos: solo el dueño puede eliminar
     if valoracion.id_paciente != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permiso para eliminar esta valoración",
         )
 
-    # Eliminar
     exito = repo.eliminar(valoracion_id)
 
     if not exito:

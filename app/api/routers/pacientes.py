@@ -28,7 +28,7 @@ def crear_paciente(
     """
     Crea un nuevo paciente en el sistema.
 
-    **POLICY APLICADA:**
+    POLICY APLICADA:
     - El solicitante que crea el paciente debe estar ACTIVO
 
     El paciente estará asociado a un solicitante (usuario que gestiona sus turnos).
@@ -37,10 +37,8 @@ def crear_paciente(
     try:
         policies = IntegrityPolicies()
 
-        # POLICY: Validar que el solicitante está activo
         policies.validar_usuario_activo(db, data.solicitante_id)
 
-        # Convertir schema a entidad de dominio
         ubicacion = Ubicacion(
             provincia=data.ubicacion.provincia,
             departamento=data.ubicacion.departamento,
@@ -51,7 +49,6 @@ def crear_paciente(
             longitud=data.ubicacion.longitud,
         )
 
-        # Crear entidad de dominio
         paciente = Paciente(
             id=uuid4(),
             nombre=data.nombre,
@@ -63,7 +60,6 @@ def crear_paciente(
             notas=data.notas or "",
         )
 
-        # Guardar en el repositorio
         paciente_creado = repo.crear(
             paciente, solicitante_id=data.solicitante_id
         )
@@ -138,14 +134,12 @@ def actualizar_paciente(
         )
 
     try:
-        # Actualizar los campos
         paciente.nombre = data.nombre
         paciente.apellido = data.apellido
         paciente.fecha_nacimiento = data.fecha_nacimiento
         paciente.relacion = data.relacion
         paciente.notas = data.notas or ""
 
-        # Actualizar ubicación si cambió
         if data.ubicacion:
             paciente.ubicacion = Ubicacion(
                 provincia=data.ubicacion.provincia,
@@ -157,7 +151,6 @@ def actualizar_paciente(
                 longitud=data.ubicacion.longitud,
             )
 
-        # Guardar cambios
         paciente_actualizado = repo.actualizar(paciente)
 
         if not paciente_actualizado:

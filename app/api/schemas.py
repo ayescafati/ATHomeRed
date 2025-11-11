@@ -7,10 +7,7 @@ from datetime import date, time, datetime
 from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
-
-
-# Value Objects Schemas
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 
 class UbicacionSchema(BaseModel):
@@ -50,14 +47,12 @@ class MatriculaSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# Entities Schemas
-
-
 class EspecialidadSchema(BaseModel):
     """Schema para especialidad médica"""
 
     id: int
     nombre: str
+    tarifa: Decimal
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -105,9 +100,6 @@ class ProfesionalUpdate(BaseModel):
     disponibilidades: Optional[List[DisponibilidadSchema]] = None
 
 
-# Paciente Schemas
-
-
 class PacienteCreate(BaseModel):
     """Schema para crear paciente (sin email/celular - los tiene el Solicitante)"""
 
@@ -120,7 +112,7 @@ class PacienteCreate(BaseModel):
     )
     notas: Optional[str] = None
     ubicacion: UbicacionSchema
-    solicitante_id: UUID  # Requerido: el usuario que gestiona los turnos
+    solicitante_id: UUID
 
 
 class PacienteResponse(BaseModel):
@@ -153,15 +145,12 @@ class PacienteResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# Consulta/Cita Schemas
-
-
 class ConsultaCreate(BaseModel):
     """Schema para crear una consulta"""
 
     profesional_id: UUID
     paciente_id: UUID
-    solicitante_id: UUID  # Requerido para validación de policies
+    solicitante_id: UUID
     fecha: date
     hora_inicio: time
     hora_fin: time
@@ -178,7 +167,7 @@ class ConsultaResponse(BaseModel):
     fecha: date
     hora_inicio: time
     hora_fin: time
-    estado: str  # Enum: PENDIENTE, CONFIRMADA, CANCELADA, COMPLETADA
+    estado: str
     ubicacion: UbicacionSchema
     motivo: Optional[str]
     notas: Optional[str]
@@ -220,9 +209,6 @@ class BusquedaProfesionalResponse(BaseModel):
     criterios_aplicados: dict
 
 
-# Valoración Schemas
-
-
 class ValoracionCreate(BaseModel):
     """Schema para crear valoración"""
 
@@ -259,6 +245,7 @@ class TokenSchema(BaseModel):
     """Schema para token de autenticación"""
 
     access_token: str
+    refresh_token: Optional[str] = None
     token_type: str = "bearer"
 
 
