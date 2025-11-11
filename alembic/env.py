@@ -8,14 +8,11 @@ from alembic import context
 import os
 import sys
 
-# Add the project root to the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-# Import your Base and models
 from app.infra.persistence.database import DATABASE_URL
 from app.infra.persistence.base import Base
 
-# Import all ORM models to ensure they're registered with Base.metadata
 from app.infra.persistence import (
     usuarios,
     perfiles,
@@ -27,13 +24,13 @@ from app.infra.persistence import (
     relaciones,
     paciente,
     valoraciones,
+    auth,
 )
 
-# This is the Alembic Config object
 config = context.config
 
 # Override sqlalchemy.url with our DATABASE_URL
-# Escapar % en la URL para evitar problemas con interpolación de .ini
+# Escapar % en la URL para evitar problemas con interpolacion de .ini
 database_url_escaped = DATABASE_URL.replace("%", "%%")
 config.set_main_option("sqlalchemy.url", database_url_escaped)
 
