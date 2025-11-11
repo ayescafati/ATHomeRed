@@ -18,7 +18,8 @@ class Observer(ABC):
 class Subject(ABC):
     """Sujeto que notifica a observadores (patrón GoF)"""
 
-    observers: List[Observer]
+    def __init__(self):
+        self.observers: List[Observer] = []
 
     def attach(self, obs: Observer) -> None:
         """Suscribir observador"""
