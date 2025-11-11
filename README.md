@@ -341,36 +341,91 @@ Variables relevantes:
 
 ## Puesta en marcha
 
-### Local
-```bash
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-# Linux/Mac:
-source .venv/bin/activate
+> Requisitos: *(Opcional)* Docker Desktop · *(Opcional)* Conda/Mamba  
+> *(La versión de Python está detallada en **Tecnologías**.)*
 
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-# Abrí http://localhost:8000 y /docs
-```
+### 1) Clonar y preparar variables
+Cloná el repo y creá tu `.env` a partir del ejemplo:
+    
+    # Clonar el repo y entrar
+    git clone <URL-de-tu-repo>
+    cd <carpeta-del-repo>
+    
+    # Crear .env a partir del ejemplo y completar valores (DB, SECRET, etc.)
+    cp .env.example .env
 
-### Con Docker (DB)
-```bash
-docker compose -f docker/docker-compose.yml up -d   # levanta PostgreSQL
-alembic upgrade head                                 # aplica migraciones
-uvicorn app.main:app --reload                        # levanta la API
-```
+### 2A) Opción local (venv)
+Creá un entorno virtual, instalá dependencias, corré migraciones y levantá la API:
+    
+    # Crear y activar entorno
+    python -m venv .venv
+    # Windows
+    .venv\Scripts\activate
+    # Linux/Mac
+    source .venv/bin/activate
+    
+    # Instalar dependencias
+    pip install -r requirements.txt
+    
+    # Migraciones
+    alembic upgrade head
+    
+    # Levantar la API
+    uvicorn app.main:app --reload
+    # Abrí http://localhost:8000/docs
 
-### Migraciones
-```bash
-# Crear una nueva migración
-alembic revision -m "descripcion" --autogenerate
+### 2B) Opción con Conda/Mamba (alternativa)
+Si preferís Conda/Mamba:
+    
+    # Crear y activar entorno
+    mamba create -n athomered python=3.11 -y   # o conda create ...
+    conda activate athomered
+    
+    # Instalar dependencias
+    pip install -r requirements.txt
+    
+    # Migraciones
+    alembic upgrade head
+    
+    # Correr API
+    uvicorn app.main:app --reload
 
-# Aplicar
-alembic upgrade head
+### 2C) Docker (solo base de datos)
+Levantá PostgreSQL con Docker y usá tu entorno local para la API:
+    
+    # Levantar PostgreSQL en Docker
+    docker compose -f docker/docker-compose.yml up -d
+    
+    # Aplicar migraciones contra la DB de Docker
+    alembic upgrade head
+    
+    # Levantar la API
+    uvicorn app.main:app --reload
 
-# Revertir
-alembic downgrade -1
-```
+### 3) Comprobación rápida
+Probá que la API responda y el login funcione:
+    
+    # Documentación interactiva
+    # http://localhost:8000/docs
+    
+    # Ejemplo de login (reemplazar email/password por los tuyos)
+    curl -X POST "http://localhost:8000/api/v1/auth/login" ^
+      -H "Content-Type: application/json" ^
+      -d "{\"email\":\"probando@gmail.com\",\"password\":\"Prueba123.\"}"
+
+> Tip: en `scripts/` hay utilidades como `check_db.py` / `test_connection.py` (conexión DB) y `smoke_auth.py` (flujo de auth).
+
+### 4) Migraciones (referencia)
+Comandos útiles de Alembic:
+    
+    # Crear una nueva migración
+    alembic revision -m "descripcion" --autogenerate
+    
+    # Aplicar
+    alembic upgrade head
+    
+    # Revertir
+    alembic downgrade -1
 
 ---
 
