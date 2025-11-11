@@ -1,125 +1,229 @@
 """
 Repository para operaciones de autenticación y gestión de tokens.
 """
+
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
 
 from app.infra.persistence.auth import RefreshTokenORM, AuditoriaLoginORM
-from app.infra.persistence.usuarios import UsuarioORM
 
 
 class AuthRepository:
     """
     Repositorio para gestionar autenticación, tokens y auditoría.
-    
-    TODO: Implementar métodos para:
+
+    Implementa:
     - Crear y validar refresh tokens
-    - Revocar tokens
-    - Registrar intentos de login
-    - Limpiar tokens expirados
+    - Revocar tokens (logout individual y global)
+    - Registrar intentos de login (auditoría)
+    - Limpiar tokens expirados (mantenimiento)
+    - Detectar intentos de fuerza bruta
     """
-    
+
     def __init__(self, db: Session):
         self.db = db
-    
-    # REFRESH TOKENS
-    
+
     def crear_refresh_token(
-        self, 
-        usuario_id: int, 
-        token: str, 
+        self,
+        usuario_id: str,
+        token: str,
         expira_en: datetime,
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
     ) -> RefreshTokenORM:
         """
         Crea un nuevo refresh token para el usuario.
-        
-        TODO: Implementar
-        - Crear RefreshTokenORM
-        - Guardar en DB
-        - Retornar el token creado
+
+        Args:
+            usuario_id: ID del usuario (UUID)
+            token: Token encriptado
+            expira_en: Fecha de expiración
+            ip_address: IP del cliente (opcional)
+            user_agent: User agent del navegador (opcional)
+
+        Returns:
+            RefreshTokenORM creado
         """
-        raise NotImplementedError("TODO: Implementar crear_refresh_token")
-    
+        refresh_token = RefreshTokenORM(
+            usuario_id=usuario_id,
+            token=token,
+            expira_en=expira_en,
+            revocado=False,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            creado_en=datetime.utcnow(),
+        )
+
+        self.db.add(refresh_token)
+        self.db.commit()
+        self.db.refresh(refresh_token)
+
+        return refresh_token
+
     def obtener_refresh_token(self, token: str) -> Optional[RefreshTokenORM]:
         """
         Busca un refresh token por su valor.
-        
-        TODO: Implementar
-        - Buscar token en DB
-        - Verificar que no esté revocado
-        - Verificar que no esté expirado
+
+        Args:
+            token: Token a buscar
+
+        Returns:
+            RefreshTokenORM si existe y es válido, None en caso contrario
+
+        Validaciones:
+            - Token existe
+            - No está revocado
+            - No está expirado
         """
-        raise NotImplementedError("TODO: Implementar obtener_refresh_token")
-    
+        refresh_token = (
+            self.db.query(RefreshTokenORM)
+            .filter(
+                and_(
+                    RefreshTokenORM.token == token,
+                    RefreshTokenORM.revocado == False,
+                    RefreshTokenORM.expira_en > datetime.utcnow(),
+                )
+            )
+            .first()
+        )
+
+        return refresh_token
+
     def revocar_refresh_token(self, token: str) -> bool:
         """
-        Revoca un refresh token (logout).
-        
-        TODO: Implementar
-        - Buscar token
-        - Marcar como revocado=True
-        - Guardar cambios
+        Revoca un refresh token (logout de una sesión).
+
+        Args:
+            token: Token a revocar
+
+        Returns:
+            True si se revocó exitosamente, False si no se encontró
         """
-        raise NotImplementedError("TODO: Implementar revocar_refresh_token")
-    
-    def revocar_todos_tokens_usuario(self, usuario_id: int) -> int:
+        refresh_token = (
+            self.db.query(RefreshTokenORM)
+            .filter(RefreshTokenORM.token == token)
+            .first()
+        )
+
+        if not refresh_token:
+            return False
+
+        refresh_token.revocado = True
+        self.db.commit()
+
+        return True
+
+    def revocar_todos_tokens_usuario(self, usuario_id: str) -> int:
         """
         Revoca todos los tokens de un usuario (logout de todas las sesiones).
-        
-        TODO: Implementar
-        - Buscar todos los tokens del usuario
-        - Marcar todos como revocados
-        - Retornar cantidad de tokens revocados
+
+        Args:
+            usuario_id: ID del usuario (UUID)
+
+        Returns:
+            Cantidad de tokens revocados
+
+        Uso: Cuando el usuario cambia contraseña o cierra todas las sesiones
         """
-        raise NotImplementedError("TODO: Implementar revocar_todos_tokens_usuario")
-    
+        cantidad = (
+            self.db.query(RefreshTokenORM)
+            .filter(
+                and_(
+                    RefreshTokenORM.usuario_id == usuario_id,
+                    RefreshTokenORM.revocado == False,
+                )
+            )
+            .update({"revocado": True})
+        )
+
+        self.db.commit()
+
+        return cantidad
+
     def limpiar_tokens_expirados(self) -> int:
         """
         Elimina tokens expirados de la DB (tarea de mantenimiento).
-        
-        TODO: Implementar
-        - Buscar tokens donde expira_en < datetime.utcnow()
-        - Eliminar de DB
-        - Retornar cantidad eliminada
+
+        Returns:
+            Cantidad de tokens eliminados
+
+        Uso: Ejecutar periódicamente (ej: cron job diario)
         """
-        raise NotImplementedError("TODO: Implementar limpiar_tokens_expirados")
-    
-    # AUDITORÍA
-    
+        cantidad = (
+            self.db.query(RefreshTokenORM)
+            .filter(RefreshTokenORM.expira_en < datetime.utcnow())
+            .delete()
+        )
+
+        self.db.commit()
+
+        return cantidad
+
     def registrar_intento_login(
         self,
         email: str,
         exitoso: bool,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
-        motivo: Optional[str] = None
+        motivo: Optional[str] = None,
     ) -> AuditoriaLoginORM:
         """
         Registra un intento de login en la tabla de auditoría.
-        
-        TODO: Implementar
-        - Crear AuditoriaLoginORM
-        - Guardar en DB
-        - Retornar el registro
+
+        Args:
+            email: Email del usuario que intentó hacer login
+            exitoso: True si el login fue exitoso, False si falló
+            ip_address: IP del cliente (opcional)
+            user_agent: User agent del navegador (opcional)
+            motivo: Razón del fallo (ej: "Contraseña incorrecta", "Usuario no existe")
+
+        Returns:
+            AuditoriaLoginORM creado
         """
-        raise NotImplementedError("TODO: Implementar registrar_intento_login")
-    
+        auditoria = AuditoriaLoginORM(
+            email=email,
+            exitoso=exitoso,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            motivo=motivo,
+            fecha=datetime.utcnow(),
+        )
+
+        self.db.add(auditoria)
+        self.db.commit()
+        self.db.refresh(auditoria)
+
+        return auditoria
+
     def obtener_intentos_fallidos_recientes(
-        self, 
-        email: str, 
-        minutos: int = 15
+        self, email: str, minutos: int = 15
     ) -> int:
         """
         Cuenta intentos de login fallidos en los últimos X minutos.
-        
-        TODO: Implementar
-        - Buscar intentos fallidos del email
-        - Filtrar por fecha (últimos X minutos)
-        - Contar y retornar
-        
-        Útil para: Detectar ataques de fuerza bruta
+
+        Args:
+            email: Email del usuario
+            minutos: Ventana de tiempo a considerar (default: 15 minutos)
+
+        Returns:
+            Cantidad de intentos fallidos
+
+        Uso: Detectar ataques de fuerza bruta y bloquear temporalmente
         """
-        raise NotImplementedError("TODO: Implementar obtener_intentos_fallidos_recientes")
+        tiempo_limite = datetime.utcnow() - timedelta(minutes=minutos)
+
+        cantidad = (
+            self.db.query(AuditoriaLoginORM)
+            .filter(
+                and_(
+                    AuditoriaLoginORM.email == email,
+                    AuditoriaLoginORM.exitoso == False,
+                    AuditoriaLoginORM.fecha >= tiempo_limite,
+                )
+            )
+            .count()
+        )
+
+        return cantidad

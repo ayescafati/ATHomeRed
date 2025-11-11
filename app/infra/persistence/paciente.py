@@ -52,14 +52,12 @@ class PacienteORM(Base):
         ForeignKey(f"{SCHEMA}.direccion.id", ondelete="SET NULL"),
     )
 
-    # clave del rediseño: vínculo directo
     solicitante_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey(f"{SCHEMA}.solicitante.id", ondelete="CASCADE"),
         nullable=False,
     )
 
-    # (opcional) tipo de relación: madre/padre/tutor/self
     relacion_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey(f"{SCHEMA}.relacion_solicitante.id", ondelete="RESTRICT"),
         nullable=True,
@@ -68,19 +66,17 @@ class PacienteORM(Base):
     solicitante: Mapped["SolicitanteORM"] = relationship(
         "SolicitanteORM", back_populates="paciente", uselist=False
     )
-    # Navegar al catálogo:
+
     relacion: Mapped[Optional["RelacionSolicitanteORM"]] = relationship(
         "RelacionSolicitanteORM"
     )
 
-    # Consultas del paciente
     consultas: Mapped[List["ConsultaORM"]] = relationship(
         "ConsultaORM",
         back_populates="paciente",
         cascade="all, delete-orphan",
     )
 
-    # Valoraciones hechas por el paciente
     valoraciones: Mapped[List["ValoracionORM"]] = relationship(
         "ValoracionORM",
         back_populates="paciente",

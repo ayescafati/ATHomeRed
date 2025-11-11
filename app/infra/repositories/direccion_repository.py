@@ -26,8 +26,6 @@ class DireccionRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    # CONVERSIÓN
-
     def _to_domain(self, orm: DireccionORM) -> Ubicacion:
         """Convierte DireccionORM a Ubicacion (value object)"""
         return Ubicacion(
@@ -38,17 +36,13 @@ class DireccionRepository:
             numero=str(orm.numero),
         )
 
-    # BÚSQUEDA O CREACIÓN
-
     def buscar_o_crear_provincia(self, nombre: str) -> ProvinciaORM:
         """
         Busca una provincia por nombre (case-insensitive).
         Si no existe, la crea.
         """
-        # Normalizar nombre
         nombre = nombre.strip().title()
 
-        # Buscar existente
         provincia = (
             self.session.query(ProvinciaORM)
             .filter(ProvinciaORM.nombre.ilike(nombre))
@@ -58,7 +52,6 @@ class DireccionRepository:
         if provincia:
             return provincia
 
-        # Crear nueva
         provincia = ProvinciaORM(nombre=nombre)
         self.session.add(provincia)
         self.session.flush()
@@ -72,10 +65,9 @@ class DireccionRepository:
         Busca un departamento por nombre y provincia.
         Si no existe, lo crea.
         """
-        # Normalizar nombre
+
         nombre = nombre.strip().title()
 
-        # Buscar existente
         departamento = (
             self.session.query(DepartamentoORM)
             .filter(
@@ -88,7 +80,6 @@ class DireccionRepository:
         if departamento:
             return departamento
 
-        # Crear nuevo
         departamento = DepartamentoORM(
             nombre=nombre, provincia_id=provincia.id
         )
@@ -104,10 +95,9 @@ class DireccionRepository:
         Busca un barrio por nombre y departamento.
         Si no existe, lo crea.
         """
-        # Normalizar nombre
+
         nombre = nombre.strip().title()
 
-        # Buscar existente
         barrio = (
             self.session.query(BarrioORM)
             .filter(
@@ -120,14 +110,11 @@ class DireccionRepository:
         if barrio:
             return barrio
 
-        # Crear nuevo
         barrio = BarrioORM(nombre=nombre, departamento_id=departamento.id)
         self.session.add(barrio)
         self.session.flush()
 
         return barrio
-
-    # CREACIÓN COMPLETA
 
     def crear_con_jerarquia(self, ubicacion: Ubicacion) -> DireccionORM:
         """
@@ -155,18 +142,15 @@ class DireccionRepository:
             )
             direccion = repo.crear_con_jerarquia(ubicacion)
         """
-        # 1. Provincia
+
         provincia = self.buscar_o_crear_provincia(ubicacion.provincia)
 
-        # 2. Departamento
         departamento = self.buscar_o_crear_departamento(
             ubicacion.departamento, provincia
         )
 
-        # 3. Barrio
         barrio = self.buscar_o_crear_barrio(ubicacion.barrio, departamento)
 
-        # 4. Dirección - Buscar si ya existe
         direccion = (
             self.session.query(DireccionORM)
             .filter(
@@ -180,7 +164,6 @@ class DireccionRepository:
         if direccion:
             return direccion
 
-        # Crear nueva dirección
         direccion = DireccionORM(
             barrio_id=barrio.id,
             calle=ubicacion.calle.strip(),
@@ -190,8 +173,6 @@ class DireccionRepository:
         self.session.flush()
 
         return direccion
-
-    # CONSULTAS
 
     def obtener_por_id(self, id: UUID) -> Optional[DireccionORM]:
         """Obtiene una dirección por su ID"""
@@ -228,8 +209,6 @@ class DireccionRepository:
             )
             .first()
         )
-
-    # CATÁLOGOS
 
     def listar_provincias(self) -> List[ProvinciaORM]:
         """Lista todas las provincias disponibles"""
@@ -269,8 +248,6 @@ class DireccionRepository:
             .order_by(DireccionORM.calle, DireccionORM.numero)
             .all()
         )
-
-    # BÚSQUEDAS AVANZADAS
 
     def buscar_direcciones(
         self,
@@ -337,8 +314,6 @@ class DireccionRepository:
 
         return (provincia, departamento, barrio, direccion)
 
-    # GEOCODING (PREPARADO)
-
     def actualizar_coordenadas(
         self, direccion_id: UUID, latitud: float, longitud: float
     ) -> Optional[DireccionORM]:
@@ -352,7 +327,6 @@ class DireccionRepository:
         if not direccion:
             return None
 
-        # Validar rango de coordenadas
         if not (-90 <= latitud <= 90 and -180 <= longitud <= 180):
             raise ValueError("Coordenadas fuera de rango válido")
 
@@ -362,8 +336,6 @@ class DireccionRepository:
         self.session.flush()
 
         return direccion
-
-    # ESTADÍSTICAS
 
     def contar_provincias(self) -> int:
         """Cuenta el total de provincias"""

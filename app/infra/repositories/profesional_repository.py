@@ -29,10 +29,8 @@ class ProfesionalRepository:
 
     def _to_domain(self, orm: ProfesionalORM) -> Profesional:
         """ORM → Dominio"""
-        # Convertir direccion ORM a Ubicacion value object
         ubicacion = None
         if orm.direccion:
-            # Acceder a la jerarquía: direccion → barrio → departamento → provincia
             ubicacion = Ubicacion(
                 provincia=orm.direccion.barrio.departamento.provincia.nombre,
                 departamento=orm.direccion.barrio.departamento.nombre,
@@ -43,7 +41,6 @@ class ProfesionalRepository:
                 longitud=orm.direccion.longitud,
             )
 
-        # Si no hay dirección, crear una ubicación vacía
         if ubicacion is None:
             ubicacion = Ubicacion(
                 provincia="", departamento="", barrio="", calle="", numero=""
@@ -134,9 +131,9 @@ class ProfesionalRepository:
             profesional.ubicacion = Ubicacion(...)
             prof_repo.crear(profesional)  # Crea usuario y dirección
         """
-        # Paso 1: Crear o usar UsuarioORM
+
         if usuario_id is None:
-            # Crear nuevo usuario
+
             usuario_orm = UsuarioORM(
                 nombre=profesional.nombre,
                 apellido=profesional.apellido,
@@ -148,23 +145,21 @@ class ProfesionalRepository:
                 verificado=profesional.verificado,
             )
             self.session.add(usuario_orm)
-            self.session.flush()  # Para obtener el ID
+            self.session.flush()
             usuario_id = usuario_orm.id
 
-        # Paso 2: Crear o usar DireccionORM
         if direccion_id is None and profesional.ubicacion:
             direccion_orm = self.direccion_repo.crear_con_jerarquia(
                 profesional.ubicacion
             )
             direccion_id = direccion_orm.id
 
-        # Paso 3: Crear ProfesionalORM
         orm = ProfesionalORM(
             usuario_id=usuario_id,
             direccion_id=direccion_id,
             activo=profesional.activo,
             verificado=profesional.verificado,
-            matricula="",  # Campo legacy
+            matricula="",
         )
         self.session.add(orm)
         self.session.commit()
@@ -196,7 +191,6 @@ class ProfesionalRepository:
             profesional.ubicacion = Ubicacion(...)
             prof_repo.actualizar(profesional)  # Crea nueva dirección
         """
-        # Obtener el ORM existente
         orm = (
             self.session.query(ProfesionalORM)
             .filter(ProfesionalORM.id == profesional.id)
@@ -208,23 +202,18 @@ class ProfesionalRepository:
                 f"Profesional con id {profesional.id} no encontrado"
             )
 
-        # Actualizar campos del usuario
         orm.usuario.nombre = profesional.nombre
         orm.usuario.apellido = profesional.apellido
         orm.usuario.email = profesional.email
         orm.usuario.celular = profesional.celular
         orm.usuario.activo = profesional.activo
 
-        # Actualizar campos del profesional
         orm.activo = profesional.activo
         orm.verificado = profesional.verificado
 
-        # Manejar actualización de dirección
         if direccion_id:
-            # Dirección explícita proporcionada
             orm.direccion_id = direccion_id
         elif profesional.ubicacion:
-            # Verificar si la ubicación cambió
             ubicacion_actual = (
                 self.direccion_repo._to_domain(orm.direccion)
                 if orm.direccion
@@ -232,7 +221,6 @@ class ProfesionalRepository:
             )
 
             if ubicacion_actual != profesional.ubicacion:
-                # La ubicación cambió, crear nueva dirección
                 nueva_direccion = self.direccion_repo.crear_con_jerarquia(
                     profesional.ubicacion
                 )
@@ -292,17 +280,14 @@ class ProfesionalRepository:
         )
 
         if especialidad_id:
-            # Búsqueda exacta por ID (más eficiente)
             query = query.filter(
                 EspecialidadORM.id_especialidad == especialidad_id
             )
         elif especialidad_nombre:
-            # Búsqueda por nombre (case-insensitive, partial match)
             query = query.filter(
                 EspecialidadORM.nombre.ilike(f"%{especialidad_nombre}%")
             )
         else:
-            # Si no hay ningún criterio, devolver vacío
             return []
 
         orms = query.all()
@@ -322,17 +307,14 @@ class ProfesionalRepository:
         query = (
             self.session.query(ProfesionalORM)
             .join(ProfesionalORM.direccion)
+            .join(DireccionORM.barrio)
+            .join(BarrioORM.departamento)
+            .join(DepartamentoORM.provincia)
             .filter(ProfesionalORM.activo == True)
         )
 
-        # Aplicar filtros según la jerarquía
         if provincia:
-            query = (
-                query.join(DireccionORM.barrio)
-                .join(BarrioORM.departamento)
-                .join(DepartamentoORM.provincia)
-                .filter(ProvinciaORM.nombre.ilike(f"%{provincia}%"))
-            )
+            query = query.filter(ProvinciaORM.nombre.ilike(f"%{provincia}%"))
         if departamento:
             query = query.filter(
                 DepartamentoORM.nombre.ilike(f"%{departamento}%")
@@ -355,41 +337,40 @@ class ProfesionalRepository:
         Busca profesionales por ubicación y/o especialidad.
         Prioriza especialidad_id sobre especialidad_nombre.
         """
-        query = (
-            self.session.query(ProfesionalORM)
-            .join(ProfesionalORM.direccion)
-            .outerjoin(ProfesionalORM.especialidades)
-            .filter(ProfesionalORM.activo == True)
+        query = self.session.query(ProfesionalORM).filter(
+            ProfesionalORM.activo == True
         )
 
-        # Ubicación
-        if provincia:
+        if provincia or departamento or barrio:
             query = (
-                query.join(DireccionORM.barrio)
+                query.join(ProfesionalORM.direccion)
+                .join(DireccionORM.barrio)
                 .join(BarrioORM.departamento)
                 .join(DepartamentoORM.provincia)
-                .filter(ProvinciaORM.nombre.ilike(f"%{provincia}%"))
-            )
-        if departamento:
-            query = (
-                query.join(DireccionORM.barrio)
-                .join(BarrioORM.departamento)
-                .filter(DepartamentoORM.nombre.ilike(f"%{departamento}%"))
-            )
-        if barrio:
-            query = query.join(DireccionORM.barrio).filter(
-                BarrioORM.nombre.ilike(f"%{barrio}%")
             )
 
-        # Especialidad (prioriza ID sobre nombre)
-        if especialidad_id:
-            query = query.filter(
-                EspecialidadORM.id_especialidad == especialidad_id
-            )
-        elif especialidad_nombre:
-            query = query.filter(
-                EspecialidadORM.nombre.ilike(f"%{especialidad_nombre}%")
-            )
+            if provincia:
+                query = query.filter(
+                    ProvinciaORM.nombre.ilike(f"%{provincia}%")
+                )
+            if departamento:
+                query = query.filter(
+                    DepartamentoORM.nombre.ilike(f"%{departamento}%")
+                )
+            if barrio:
+                query = query.filter(BarrioORM.nombre.ilike(f"%{barrio}%"))
+
+        if especialidad_id or especialidad_nombre:
+            query = query.join(ProfesionalORM.especialidades)
+
+            if especialidad_id:
+                query = query.filter(
+                    EspecialidadORM.id_especialidad == especialidad_id
+                )
+            elif especialidad_nombre:
+                query = query.filter(
+                    EspecialidadORM.nombre.ilike(f"%{especialidad_nombre}%")
+                )
 
         orms = query.all()
         return [self._to_domain(orm) for orm in orms]

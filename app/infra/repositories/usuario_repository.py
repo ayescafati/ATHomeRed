@@ -1,9 +1,9 @@
 """
 Repository para operaciones CRUD de usuarios (autenticación).
 """
+
 from typing import Optional
 from datetime import datetime, timedelta
-from uuid import UUID as UUIDType
 from sqlalchemy.orm import Session
 
 from app.infra.persistence.usuarios import UsuarioORM
@@ -12,19 +12,17 @@ from app.infra.persistence.usuarios import UsuarioORM
 class UsuarioRepository:
     """
     Repositorio para gestionar usuarios en el contexto de autenticación.
-    
+
     Incluye métodos para:
     - CRUD de usuarios
     - Autenticación y login
     - Rate limiting (bloqueos por intentos fallidos)
     - Gestión de sesiones
     """
-    
+
     def __init__(self, db: Session):
         self.db = db
-    
-    # CRUD BÁSICO
-    
+
     def crear_usuario(
         self,
         email: str,
@@ -33,11 +31,11 @@ class UsuarioRepository:
         apellido: str,
         celular: Optional[str] = None,
         es_profesional: bool = False,
-        es_solicitante: bool = True
+        es_solicitante: bool = True,
     ) -> UsuarioORM:
         """
         Crea un nuevo usuario con contraseña hasheada.
-        
+
         IMPORTANTE: NO hashear la password aquí, debe venir ya hasheada.
         """
         existente = self.obtener_por_email(email)
@@ -57,11 +55,11 @@ class UsuarioRepository:
         self.db.commit()
         self.db.refresh(usuario)
         return usuario
-    
+
     def obtener_por_email(self, email: str) -> Optional[UsuarioORM]:
         """
         Busca un usuario por su email.
-        
+
         - Buscar usuario donde email = email
         - Retornar usuario o None
         """
@@ -70,25 +68,26 @@ class UsuarioRepository:
             .filter(UsuarioORM.email == email)
             .one_or_none()
         )
-    
+
     def obtener_por_id(self, usuario_id) -> Optional[UsuarioORM]:
         """
         Busca un usuario por su ID.
-        
+
         - Buscar usuario por ID
         - Retornar usuario o None
         """
-        # Aceptamos UUID (str/UUID) o el tipo nativo
+
         try:
-            # SQLAlchemy 2: session.get
-            return self.db.get(UsuarioORM, usuario_id)  # type: ignore[arg-type]
+            return self.db.get(UsuarioORM, usuario_id)
         except Exception:
             return None
-    
-    def actualizar_password(self, usuario_id, nuevo_password_hash: str) -> bool:
+
+    def actualizar_password(
+        self, usuario_id, nuevo_password_hash: str
+    ) -> bool:
         """
         Actualiza la contraseña de un usuario.
-        
+
         - Buscar usuario por ID
         - Actualizar password_hash
         - Guardar cambios
@@ -100,13 +99,11 @@ class UsuarioRepository:
         usuario.password_hash = nuevo_password_hash
         self.db.commit()
         return True
-    
-    # AUTENTICACIÓN
-    
+
     def actualizar_ultimo_login(self, usuario_id) -> bool:
         """
         Actualiza la fecha de último login.
-        
+
         - Buscar usuario
         - Actualizar ultimo_login = datetime.utcnow()
         - Resetear intentos_fallidos = 0
@@ -119,11 +116,11 @@ class UsuarioRepository:
         usuario.intentos_fallidos = 0
         self.db.commit()
         return True
-    
+
     def incrementar_intentos_fallidos(self, email: str) -> int:
         """
         Incrementa el contador de intentos fallidos.
-        
+
         - Buscar usuario por email
         - Incrementar intentos_fallidos
         - Si intentos >= 5, bloquear_hasta = now + 15 minutos
@@ -138,11 +135,11 @@ class UsuarioRepository:
             usuario.bloqueado_hasta = datetime.utcnow() + timedelta(minutes=15)
         self.db.commit()
         return usuario.intentos_fallidos
-    
+
     def resetear_intentos_fallidos(self, usuario_id) -> bool:
         """
         Resetea el contador de intentos fallidos a 0.
-        
+
         - Buscar usuario
         - intentos_fallidos = 0
         - bloqueado_hasta = None
@@ -155,11 +152,11 @@ class UsuarioRepository:
         usuario.bloqueado_hasta = None
         self.db.commit()
         return True
-    
+
     def esta_bloqueado(self, email: str) -> bool:
         """
         Verifica si un usuario está bloqueado por intentos fallidos.
-        
+
         - Buscar usuario por email
         - Si bloqueado_hasta es None: return False
         - Si bloqueado_hasta > datetime.utcnow(): return True
@@ -173,18 +170,15 @@ class UsuarioRepository:
         now = datetime.utcnow()
         if usuario.bloqueado_hasta > now:
             return True
-        # Desbloquear expirada
         usuario.bloqueado_hasta = None
         usuario.intentos_fallidos = 0
         self.db.commit()
         return False
-    
-    # VERIFICACIÓN 
-    
+
     def marcar_como_verificado(self, usuario_id) -> bool:
         """
         Marca un usuario como verificado (email confirmado).
-        
+
         - Buscar usuario
         - verificado = True
         - Guardar cambios
@@ -195,11 +189,11 @@ class UsuarioRepository:
         usuario.verificado = True
         self.db.commit()
         return True
-    
+
     def activar_desactivar(self, usuario_id, activo: bool) -> bool:
         """
         Activa o desactiva un usuario.
-        
+
         - Buscar usuario
         - activo = activo
         - Guardar cambios

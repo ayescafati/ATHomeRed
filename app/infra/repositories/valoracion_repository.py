@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
-from datetime import date
 
 from app.domain.entities.valoraciones import Valoracion
 from app.infra.persistence.valoraciones import ValoracionORM
@@ -49,7 +48,7 @@ class ValoracionRepository:
             Modelo ORM de la valoración
         """
         if orm is None:
-            # Crear nuevo ORM
+
             orm = ValoracionORM(
                 id=valoracion.id,
                 profesional_id=valoracion.id_profesional,
@@ -58,8 +57,7 @@ class ValoracionRepository:
                 comentario=valoracion.comentario,
             )
         else:
-            # Actualizar ORM existente
-            # Las valoraciones típicamente son inmutables, pero permitimos actualizar comentario
+
             orm.puntuacion = valoracion.puntuacion
             orm.comentario = valoracion.comentario
 

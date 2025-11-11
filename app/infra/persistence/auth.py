@@ -43,7 +43,6 @@ class RefreshTokenORM(Base):
     user_agent = Column(String(255), nullable=True)
     creado_en = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    # Relación con Usuario
     usuario = relationship("UsuarioORM", back_populates="refresh_tokens")
 
 
@@ -58,7 +57,7 @@ class AuditoriaLoginORM(Base):
     exitoso = Column(Boolean, nullable=False)
     ip_address = Column(String(45), nullable=True)
     user_agent = Column(String(255), nullable=True)
-    motivo = Column(Text, nullable=True)  # Razón del fallo si exitoso=False
+    motivo = Column(Text, nullable=True)
     fecha = Column(
         DateTime, default=datetime.utcnow, nullable=False, index=True
     )

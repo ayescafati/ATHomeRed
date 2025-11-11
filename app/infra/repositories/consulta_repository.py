@@ -1,18 +1,17 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
-from datetime import date, datetime
+from datetime import date
 
 from app.domain.entities.agenda import Cita
 from app.domain.enumeraciones import EstadoCita
-from app.domain.value_objects.objetos_valor import Ubicacion, Dinero
+from app.domain.value_objects.objetos_valor import Ubicacion
 from app.domain.eventos import Event
 from app.infra.persistence.agenda import (
     ConsultaORM,
     EventoORM,
     EstadoConsultaORM,
 )
-from app.infra.persistence.ubicacion import DireccionORM
 
 
 class ConsultaRepository:
@@ -34,10 +33,8 @@ class ConsultaRepository:
         Returns:
             Entidad Cita del dominio
         """
-        # Obtener el código del estado
         estado_codigo = orm.estado.codigo if orm.estado else "pendiente"
 
-        # Obtener ubicación usando la jerarquía correcta
         ubicacion = None
         if orm.direccion_servicio:
             dir_orm = orm.direccion_servicio
@@ -61,7 +58,6 @@ class ConsultaRepository:
             ubicacion=ubicacion,
             estado=EstadoCita(estado_codigo),
             notas=orm.notas or "",
-            # TODO: Agregar monto_acordado si se tiene en el ORM
         )
 
     def _to_orm(self, cita: Cita, orm: ConsultaORM = None) -> ConsultaORM:
@@ -75,7 +71,6 @@ class ConsultaRepository:
         Returns:
             Modelo ORM de la consulta
         """
-        # Obtener o crear el estado
         estado_orm = (
             self.session.query(EstadoConsultaORM)
             .filter(EstadoConsultaORM.codigo == cita.estado.value)
@@ -83,7 +78,6 @@ class ConsultaRepository:
         )
 
         if not estado_orm:
-            # Si no existe, crearlo (esto solo debería pasar en desarrollo)
             estado_orm = EstadoConsultaORM(
                 codigo=cita.estado.value, descripcion=cita.estado.value.upper()
             )
@@ -91,7 +85,6 @@ class ConsultaRepository:
             self.session.flush()
 
         if orm is None:
-            # Crear nuevo ORM
             orm = ConsultaORM(
                 id=cita.id,
                 paciente_id=cita.paciente_id,
@@ -103,7 +96,6 @@ class ConsultaRepository:
                 notas=cita.notas,
             )
         else:
-            # Actualizar ORM existente
             orm.fecha = cita.fecha
             orm.hora_inicio = cita.hora_inicio
             orm.hora_fin = cita.hora_fin
@@ -160,7 +152,6 @@ class ConsultaRepository:
             query = query.filter(ConsultaORM.fecha <= hasta)
 
         if solo_activas:
-            # Excluir canceladas y completadas
             query = query.join(EstadoConsultaORM).filter(
                 EstadoConsultaORM.codigo.notin_(["cancelada", "completada"])
             )
@@ -284,7 +275,6 @@ class ConsultaRepository:
         Returns:
             True si está disponible, False si hay conflicto
         """
-        # Buscar citas del profesional en esa fecha que no estén canceladas
         citas_existentes = (
             self.session.query(ConsultaORM)
             .join(EstadoConsultaORM)
@@ -296,15 +286,14 @@ class ConsultaRepository:
             .all()
         )
 
-        # Verificar solapamiento
         for cita_orm in citas_existentes:
             if (
                 hora_inicio < cita_orm.hora_fin
                 and hora_fin > cita_orm.hora_inicio
             ):
-                return False  # Hay conflicto
+                return False
 
-        return True  # Está disponible
+        return True
 
     def guardar_evento(self, evento: Event) -> None:
         """

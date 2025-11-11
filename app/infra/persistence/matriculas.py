@@ -22,7 +22,6 @@ if TYPE_CHECKING:
     from .ubicacion import ProvinciaORM
 
 
-# Matrícula (policy de provincia + vigencia)
 class MatriculaORM(Base):
     __tablename__ = "matricula"
     __table_args__ = (
@@ -60,9 +59,7 @@ class MatriculaORM(Base):
     nro_matricula: Mapped[str] = mapped_column(Varchar(50), nullable=False)
 
     vigente_desde: Mapped[date] = mapped_column(Date, nullable=False)
-    vigente_hasta: Mapped[date] = mapped_column(
-        Date, nullable=False
-    )  # ← NOT NULL
+    vigente_hasta: Mapped[date] = mapped_column(Date, nullable=False)
 
     profesional: Mapped["ProfesionalORM"] = relationship(
         "ProfesionalORM", back_populates="matriculas"

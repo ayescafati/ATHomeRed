@@ -30,7 +30,7 @@ class PacienteRepository:
         Returns:
             Entidad Paciente del dominio
         """
-        # Obtener ubicación si existe
+
         ubicacion = None
         if orm.direccion_id:
             direccion_orm = (
@@ -40,10 +40,8 @@ class PacienteRepository:
             )
 
             if direccion_orm:
-                # Reutilizar el método del DireccionRepository
                 ubicacion = self.direccion_repo._to_domain(direccion_orm)
 
-        # Si no hay dirección, crear una ubicación vacía
         if ubicacion is None:
             ubicacion = Ubicacion(
                 provincia="", departamento="", barrio="", calle="", numero=""
@@ -75,7 +73,7 @@ class PacienteRepository:
             Modelo ORM del paciente
         """
         if orm is None:
-            # Crear nuevo ORM
+
             orm = PacienteORM(
                 id=paciente.id,
                 nombre=paciente.nombre,
@@ -85,12 +83,11 @@ class PacienteRepository:
                 solicitante_id=solicitante_id,
             )
         else:
-            # Actualizar ORM existente
+
             orm.nombre = paciente.nombre
             orm.apellido = paciente.apellido
             orm.fecha_nacimiento = paciente.fecha_nacimiento
             orm.notas = paciente.notas
-            # No actualizamos solicitante_id en update (es inmutable)
 
         return orm
 
@@ -193,15 +190,14 @@ class PacienteRepository:
             paciente.ubicacion = Ubicacion(...)
             paciente_repo.crear(paciente, solicitante_id)  # Crea la dirección
         """
-        # Si no se proporciona direccion_id, intentar crear desde ubicacion
+
         if direccion_id is None and paciente.ubicacion:
-            # Crear dirección usando DireccionRepository
+
             direccion_orm = self.direccion_repo.crear_con_jerarquia(
                 paciente.ubicacion
             )
             direccion_id = direccion_orm.id
 
-        # Crear el paciente ORM
         orm = self._to_orm(paciente, solicitante_id)
         orm.direccion_id = direccion_id
 
@@ -247,12 +243,11 @@ class PacienteRepository:
         if not orm:
             return None
 
-        # Manejar actualización de dirección
         if direccion_id:
-            # Dirección explícita proporcionada
+
             orm.direccion_id = direccion_id
         elif paciente.ubicacion:
-            # Verificar si la ubicación cambió
+
             ubicacion_actual = None
             if orm.direccion_id:
                 direccion_orm = (
@@ -266,13 +261,12 @@ class PacienteRepository:
                     )
 
             if ubicacion_actual != paciente.ubicacion:
-                # La ubicación cambió, crear nueva dirección
+
                 nueva_direccion = self.direccion_repo.crear_con_jerarquia(
                     paciente.ubicacion
                 )
                 orm.direccion_id = nueva_direccion.id
 
-        # Actualizar campos básicos usando solicitante_id existente
         orm = self._to_orm(paciente, orm.solicitante_id, orm)
 
         self.session.commit()

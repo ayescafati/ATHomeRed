@@ -13,8 +13,6 @@ from .base import Base, SCHEMA
 if TYPE_CHECKING:
     from .perfiles import ProfesionalORM
 
-# Especialidades y tabla puente profesional_especialidad
-
 
 class EspecialidadORM(Base):
     __tablename__ = "especialidad"
@@ -29,7 +27,6 @@ class EspecialidadORM(Base):
     descripcion: Mapped[str] = mapped_column(Text, nullable=False)
     tarifa: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
 
-    # Relación inversa al many-to-many con ProfesionalORM
     profesionales: Mapped[List["ProfesionalORM"]] = relationship(
         "ProfesionalORM",
         secondary=lambda: profesional_especialidad,

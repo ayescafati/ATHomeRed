@@ -12,6 +12,4 @@ class RelacionSolicitanteORM(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    nombre: Mapped[str] = mapped_column(
-        unique=True, nullable=False
-    )  # 'self', 'madre', 'padre', 'tutor'
+    nombre: Mapped[str] = mapped_column(unique=True, nullable=False)

@@ -46,7 +46,6 @@ class UsuarioORM(Base):
     es_solicitante: Mapped[bool] = mapped_column(default=True, nullable=False)
     es_profesional: Mapped[bool] = mapped_column(default=False, nullable=False)
 
-    # Campos de autenticación
     password_hash: Mapped[Optional[str]] = mapped_column(
         String(255), nullable=True
     )
@@ -62,7 +61,6 @@ class UsuarioORM(Base):
     activo: Mapped[bool] = mapped_column(default=True, nullable=False)
     verificado: Mapped[bool] = mapped_column(default=False, nullable=False)
 
-    # Relaciones
     refresh_tokens = relationship(
         "RefreshTokenORM",
         back_populates="usuario",

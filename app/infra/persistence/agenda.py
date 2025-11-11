@@ -23,8 +23,6 @@ if TYPE_CHECKING:
     from .paciente import PacienteORM
     from .ubicacion import DireccionORM
 
-# Disponibilidad, EstadoConsulta, Consulta, Evento
-
 
 class DisponibilidadORM(Base):
     __tablename__ = "disponibilidad"
@@ -44,7 +42,6 @@ class DisponibilidadORM(Base):
         ForeignKey(f"{SCHEMA}.profesional.id", ondelete="CASCADE"),
         nullable=False,
     )
-    # Guardamos como texto 'LUN,MAR,MIÉ' etc. (simple y portable)
     dias_semana_text: Mapped[str] = mapped_column(
         "dias_semana", Text, nullable=False
     )
@@ -72,7 +69,6 @@ class EstadoConsultaORM(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    # Ej: PENDIENTE, CONFIRMADA, CANCELADA, COMPLETADA
     codigo: Mapped[str] = mapped_column(nullable=False)
     descripcion: Mapped[str] = mapped_column(nullable=False)
 
@@ -157,7 +153,6 @@ class EventoORM(Base):
 
     tipo: Mapped[str] = mapped_column(nullable=False)
 
-    # Datos adicionales del evento (quién lo generó, motivo, campos previos/nuevos, etc.)
     datos: Mapped[Dict[str, Any]] = mapped_column(
         JSON, nullable=False, default=dict
     )

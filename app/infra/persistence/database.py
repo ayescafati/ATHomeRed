@@ -3,11 +3,9 @@ from __future__ import annotations
 import os
 from urllib.parse import quote_plus
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
-from sqlalchemy import MetaData
+from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
-# Carga .env desde la raíz del repo por defecto; ajustá si lo tenés en otro lado
 load_dotenv()
 
 
@@ -18,25 +16,20 @@ def _build_url() -> str:
         user = os.getenv("DB_USER", "")
         pwd = os.getenv("DB_PASSWORD", "")
         host = os.getenv("DB_HOST", "localhost")
-        port = os.getenv(
-            "DB_PORT", "5432"
-        )  # 5432 directo, 6543 pool (pgBouncer)
+        port = os.getenv("DB_PORT", "5432")
         db = os.getenv("DB_NAME", "postgres")
-        ssl = os.getenv("DB_SSLMODE", "require")  # Supabase exige SSL
+        ssl = os.getenv("DB_SSLMODE", "require")
 
-        # URL-encode por si hay símbolos
         user_enc = quote_plus(user or "")
         pwd_enc = quote_plus(pwd or "")
 
         return f"postgresql+psycopg2://{user_enc}:{pwd_enc}@{host}:{port}/{db}?sslmode={ssl}"
 
-    # default local (MVP)
     return "sqlite:///./app.db"
 
 
 DATABASE_URL = _build_url()
 
-# Log “seguro” para depurar (en producción, bajá el verbosity)
 if os.getenv("DB_DEBUG", "0") == "1":
     masked = DATABASE_URL
     if "://" in masked and "@" in masked:

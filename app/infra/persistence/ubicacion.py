@@ -17,7 +17,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base, SCHEMA
 
 
-# Ubicación (catálogos normalizados hasta DIRECCION)
 class ProvinciaORM(Base):
     __tablename__ = "provincia"
     __table_args__ = (
@@ -120,7 +119,6 @@ class DireccionORM(Base):
     )
     calle: Mapped[str] = mapped_column(Varchar(100), nullable=False)
     numero: Mapped[int] = mapped_column(nullable=False)
-    # opcional (las completa el backend vía geocoding)
     latitud: Mapped[Optional[float]] = mapped_column(Float)
     longitud: Mapped[Optional[float]] = mapped_column(Float)
 
