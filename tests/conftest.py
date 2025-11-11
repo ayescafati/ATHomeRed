@@ -386,12 +386,12 @@ def tarifa_enfermeria():
 
 
 @pytest.fixture
-def publicacion_cardiologia(profesional_cardiologia, especialidad_cardiologia):
-    """Publicación de un cardiólogo"""
+def publicacion_enfermeria(profesional_enfermeria, especialidad_enfermeria):
+    """Publicación de un profesional de enfermería"""
     return Publicacion(
         id=1,
-        id_profesional=str(profesional_cardiologia.id),
-        titulo="Consulta de cardiología",
-        descripcion="Atención integral de enfermedades cardiovasculares",
-        especialidades=[especialidad_cardiologia],
+        id_profesional=str(profesional_enfermeria.id),
+        titulo="Servicios de Enfermería a Domicilio",
+        descripcion="Atención integral de enfermería profesional en el hogar",
+        especialidades=[especialidad_enfermeria],
     )

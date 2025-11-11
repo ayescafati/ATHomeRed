@@ -57,60 +57,60 @@ class TestUbicacion:
 class TestEspecialidad:
     """Tests para Especialidad"""
 
-    def test_crear_especialidad(self, especialidad_cardiologia):
+    def test_crear_especialidad(self, especialidad_enfermeria):
         """Crear una especialidad"""
-        assert especialidad_cardiologia.id == 1
-        assert especialidad_cardiologia.nombre == "Cardiología"
+        assert especialidad_enfermeria.id == 1
+        assert especialidad_enfermeria.nombre == "Enfermería"
 
     def test_especialidades_diferentes(
-        self, especialidad_cardiologia, especialidad_dermatologia
+        self, especialidad_enfermeria, especialidad_acompanante
     ):
         """Especialidades diferentes tienen IDs distintos"""
-        assert especialidad_cardiologia.id != especialidad_dermatologia.id
+        assert especialidad_enfermeria.id != especialidad_acompanante.id
         assert (
-            especialidad_cardiologia.nombre != especialidad_dermatologia.nombre
+            especialidad_enfermeria.nombre != especialidad_acompanante.nombre
         )
 
 
 class TestUsuario:
     """Tests para Usuario (clase abstracta)"""
 
-    def test_nombre_completo(self, profesional_cardiologia):
+    def test_nombre_completo(self, profesional_enfermeria):
         """La propiedad nombre_completo funciona"""
-        assert profesional_cardiologia.nombre_completo == "Juan Pérez"
+        assert profesional_enfermeria.nombre_completo == "Ana López"
 
-    def test_activar_usuario(self, profesional_cardiologia):
+    def test_activar_usuario(self, profesional_enfermeria):
         """Activar un usuario desactivado"""
-        profesional_cardiologia.activo = False
-        profesional_cardiologia.activar()
-        assert profesional_cardiologia.activo is True
+        profesional_enfermeria.activo = False
+        profesional_enfermeria.activar()
+        assert profesional_enfermeria.activo is True
 
-    def test_desactivar_usuario(self, profesional_cardiologia):
+    def test_desactivar_usuario(self, profesional_enfermeria):
         """Desactivar un usuario activo"""
-        profesional_cardiologia.activo = True
-        profesional_cardiologia.desactivar()
-        assert profesional_cardiologia.activo is False
+        profesional_enfermeria.activo = True
+        profesional_enfermeria.desactivar()
+        assert profesional_enfermeria.activo is False
 
-    def test_datos_contacto(self, profesional_cardiologia):
+    def test_datos_contacto(self, profesional_enfermeria):
         """El método datos_contacto retorna info formateada"""
-        contacto = profesional_cardiologia.datos_contacto()
-        assert "Juan Pérez" in contacto
-        assert "juan.perez@example.com" in contacto
+        contacto = profesional_enfermeria.datos_contacto()
+        assert "Ana López" in contacto
+        assert "ana.lopez@athomered.com" in contacto
         assert "1123456789" in contacto
 
 
 class TestProfesional:
     """Tests para Profesional"""
 
-    def test_crear_profesional(self, profesional_cardiologia):
+    def test_crear_profesional(self, profesional_enfermeria):
         """Crear un profesional correctamente"""
-        assert profesional_cardiologia.nombre == "Juan"
-        assert profesional_cardiologia.apellido == "Pérez"
-        assert profesional_cardiologia.verificado is True
-        assert len(profesional_cardiologia.especialidades) > 0
+        assert profesional_enfermeria.nombre == "Ana"
+        assert profesional_enfermeria.apellido == "López"
+        assert profesional_enfermeria.verificado is True
+        assert len(profesional_enfermeria.especialidades) > 0
 
     def test_profesional_no_verificado_por_defecto(
-        self, ubicacion_buenos_aires, especialidad_cardiologia
+        self, ubicacion_buenos_aires, especialidad_enfermeria
     ):
         """Un profesional nuevo no está verificado por defecto"""
         prof = Profesional(
@@ -120,43 +120,43 @@ class TestProfesional:
             email="test@example.com",
             celular="123456789",
             ubicacion=ubicacion_buenos_aires,
-            especialidades=[especialidad_cardiologia],
+            especialidades=[especialidad_enfermeria],
         )
 
         assert prof.verificado is False
 
     def test_agregar_disponibilidad(
-        self, profesional_cardiologia, disponibilidad_miercoles_tarde
+        self, profesional_enfermeria, disponibilidad_miercoles_tarde
     ):
         """Agregar disponibilidad a un profesional"""
-        cantidad_inicial = len(profesional_cardiologia.disponibilidades)
+        cantidad_inicial = len(profesional_enfermeria.disponibilidades)
 
-        profesional_cardiologia.agregar_disponibilidad(
+        profesional_enfermeria.agregar_disponibilidad(
             disponibilidad_miercoles_tarde
         )
 
         assert (
-            len(profesional_cardiologia.disponibilidades)
+            len(profesional_enfermeria.disponibilidades)
             == cantidad_inicial + 1
         )
         assert (
             disponibilidad_miercoles_tarde
-            in profesional_cardiologia.disponibilidades
+            in profesional_enfermeria.disponibilidades
         )
 
-    def test_profesional_hereda_de_usuario(self, profesional_cardiologia):
+    def test_profesional_hereda_de_usuario(self, profesional_enfermeria):
         """Profesional tiene métodos de Usuario"""
-        profesional_cardiologia.desactivar()
-        assert profesional_cardiologia.activo is False
+        profesional_enfermeria.desactivar()
+        assert profesional_enfermeria.activo is False
 
-        profesional_cardiologia.activar()
-        assert profesional_cardiologia.activo is True
+        profesional_enfermeria.activar()
+        assert profesional_enfermeria.activo is True
 
     def test_profesional_con_multiples_especialidades(
         self,
         ubicacion_buenos_aires,
-        especialidad_cardiologia,
-        especialidad_dermatologia,
+        especialidad_enfermeria,
+        especialidad_acompanante,
     ):
         """Un profesional puede tener múltiples especialidades"""
         prof = Profesional(
@@ -167,14 +167,14 @@ class TestProfesional:
             celular="123456789",
             ubicacion=ubicacion_buenos_aires,
             especialidades=[
-                especialidad_cardiologia,
-                especialidad_dermatologia,
+                especialidad_enfermeria,
+                especialidad_acompanante,
             ],
         )
 
         assert len(prof.especialidades) == 2
-        assert especialidad_cardiologia in prof.especialidades
-        assert especialidad_dermatologia in prof.especialidades
+        assert especialidad_enfermeria in prof.especialidades
+        assert especialidad_acompanante in prof.especialidades
 
 
 class TestSolicitante:
@@ -298,23 +298,23 @@ class TestIntegracionEntities:
         assert paciente_hijo.solicitante_id == solicitante.id
 
     def test_flujo_profesional_con_especialidades(
-        self, profesional_cardiologia, disponibilidad_miercoles_tarde
+        self, profesional_enfermeria, disponibilidad_miercoles_tarde
     ):
         """Flujo completo: profesional con especialidades y disponibilidades"""
-        profesional_cardiologia.agregar_disponibilidad(
+        profesional_enfermeria.agregar_disponibilidad(
             disponibilidad_miercoles_tarde
         )
 
-        assert len(profesional_cardiologia.especialidades) >= 1
-        assert len(profesional_cardiologia.disponibilidades) == 2
-        assert len(profesional_cardiologia.matriculas) >= 1
+        assert len(profesional_enfermeria.especialidades) >= 1
+        assert len(profesional_enfermeria.disponibilidades) == 2
+        assert len(profesional_enfermeria.matriculas) >= 1
 
     def test_diferencia_usuario_vs_paciente(
-        self, profesional_cardiologia, paciente
+        self, profesional_enfermeria, paciente
     ):
         """Los profesionales son usuarios, los pacientes no"""
-        assert isinstance(profesional_cardiologia, Usuario)
+        assert isinstance(profesional_enfermeria, Usuario)
         assert not isinstance(paciente, Usuario)
 
-        assert hasattr(profesional_cardiologia, "activar")
+        assert hasattr(profesional_enfermeria, "activar")
         assert not hasattr(paciente, "activar")
