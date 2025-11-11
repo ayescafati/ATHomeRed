@@ -19,9 +19,6 @@ class Valoracion:
             raise ValueError("La puntuación debe estar entre 1 y 5")
 
 
-# Función utilitaria (estadística)
-
-
 def promedio_valoraciones(
     valoraciones: list[Valoracion], id_profesional: UUID
 ) -> float:

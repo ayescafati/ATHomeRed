@@ -87,8 +87,8 @@ class Paciente:
     apellido: str
     fecha_nacimiento: dt.date
     ubicacion: Ubicacion
-    solicitante_id: UUID  # El usuario que gestiona sus turnos
-    relacion: str = "self"  # "self", "hijo/a", "padre/madre", "tutor/a", etc.
+    solicitante_id: UUID
+    relacion: str = "self"
     notas: str = ""
 
     def edad(self, hoy: Optional[dt.date] = None) -> int:

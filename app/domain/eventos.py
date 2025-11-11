@@ -19,9 +19,6 @@ class Event:
             self.timestamp = datetime.now()
 
 
-# Eventos específicos de Cita
-
-
 @dataclass
 class CitaCreada(Event):
     """Se creó una nueva cita"""

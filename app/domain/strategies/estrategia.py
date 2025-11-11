@@ -33,16 +33,6 @@ class BusquedaPorZona(EstrategiaBusqueda):
     def buscar(
         self, repo: ProfesionalRepository, filtro: FiltroBusqueda
     ) -> list[Profesional]:
-        if filtro.departamento and not filtro.provincia:
-            raise ValueError(
-                "Se debe especificar la provincia si se indica el departamento."
-            )
-        if filtro.barrio and not filtro.departamento:
-            raise ValueError(
-                "Se debe especificar el departamento si se indica el barrio."
-            )
-
-        # La logica de filtrado se delega al repositorio
         return repo.buscar_por_ubicacion(
             provincia=filtro.provincia,
             departamento=filtro.departamento,
@@ -54,12 +44,6 @@ class BusquedaPorEspecialidad(EstrategiaBusqueda):
     def buscar(
         self, repo: ProfesionalRepository, filtro: FiltroBusqueda
     ) -> list[Profesional]:
-        if not filtro.id_especialidad and not filtro.nombre_especialidad:
-            raise ValueError(
-                "Se debe especificar al menos un criterio de especialidad."
-            )
-
-        # Priorizar búsqueda por ID (más eficiente y precisa)
         return repo.buscar_por_especialidad(
             especialidad_id=filtro.id_especialidad,
             especialidad_nombre=filtro.nombre_especialidad,
@@ -70,20 +54,6 @@ class BusquedaCombinada(EstrategiaBusqueda):
     def buscar(
         self, repo: ProfesionalRepository, filtro: FiltroBusqueda
     ) -> list[Profesional]:
-        if filtro.departamento and not filtro.provincia:
-            raise ValueError(
-                "Se debe especificar la provincia si se indica el departamento."
-            )
-        if filtro.barrio and not filtro.departamento:
-            raise ValueError(
-                "Se debe especificar el departamento si se indica el barrio."
-            )
-        if not filtro.id_especialidad and not filtro.nombre_especialidad:
-            raise ValueError(
-                "Se debe especificar al menos un criterio de especialidad."
-            )
-
-        # Priorizar ID de especialidad sobre nombre
         return repo.buscar_combinado(
             especialidad_id=filtro.id_especialidad,
             especialidad_nombre=filtro.nombre_especialidad,

@@ -1,11 +1,10 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date, time, datetime, timedelta
-from typing import Optional, List
+from typing import List
 from uuid import UUID
-from decimal import Decimal
 
-from ..value_objects.objetos_valor import Dinero, Ubicacion
+from ..value_objects.objetos_valor import Ubicacion
 from ..enumeraciones import EstadoCita
 from ..eventos import (
     Event,
@@ -24,6 +23,7 @@ class Cita(Subject):
     Entidad de agenda: una cita entre paciente y profesional.
 
     Implementa el patrón Observer para notificar cambios de estado.
+    El monto se obtiene de la tarifa de la especialidad del profesional.
     """
 
     id: UUID
@@ -34,7 +34,6 @@ class Cita(Subject):
     hora_fin: time
     ubicacion: Ubicacion
     estado: EstadoCita = EstadoCita.PENDIENTE
-    monto_acordado: Optional[Dinero] = None
     notas: str = ""
     motivo_consulta: str = ""
     creado_en: datetime = field(default_factory=datetime.now)
@@ -42,19 +41,17 @@ class Cita(Subject):
 
     def __post_init__(self):
         """Validaciones al crear la cita"""
-        super().__init__()  # Inicializar Subject
+        super().__init__()
 
         if self.hora_inicio >= self.hora_fin:
             raise ValueError("hora_inicio debe ser anterior a hora_fin")
 
-        # Validar que la cita dure al menos 30 minutos
         duracion = datetime.combine(
             date.today(), self.hora_fin
         ) - datetime.combine(date.today(), self.hora_inicio)
         if duracion < timedelta(minutes=30):
             raise ValueError("La cita debe durar al menos 30 minutos")
 
-        # Validar que la cita dure máximo 4 horas
         if duracion > timedelta(hours=4):
             raise ValueError("La cita no puede durar más de 4 horas")
 
@@ -104,7 +101,6 @@ class Cita(Subject):
         self.estado = EstadoCita.CONFIRMADA
         self.actualizado_en = datetime.now()
 
-        # Notificar a los observadores
         self.notify(
             CitaConfirmada(cita_id=self.id, confirmado_por=confirmado_por)
         )
@@ -130,7 +126,6 @@ class Cita(Subject):
         if motivo:
             self.notas = f"{self.notas}\nCancelada: {motivo}".strip()
 
-        # Notificar a los observadores
         self.notify(
             CitaCancelada(
                 cita_id=self.id, motivo=motivo, cancelado_por=cancelado_por
@@ -158,7 +153,6 @@ class Cita(Subject):
         if notas_finales:
             self.notas = f"{self.notas}\n{notas_finales}".strip()
 
-        # Notificar a los observadores
         self.notify(CitaCompletada(cita_id=self.id, notas=notas_finales))
 
     def reprogramar(
@@ -185,18 +179,15 @@ class Cita(Subject):
                 "La hora de inicio debe ser anterior a la hora de fin"
             )
 
-        # Guardar valores anteriores
         fecha_anterior = f"{self.fecha} {self.hora_inicio}-{self.hora_fin}"
         fecha_nueva = f"{nueva_fecha} {nueva_hora_inicio}-{nueva_hora_fin}"
 
-        # Actualizar
         self.fecha = nueva_fecha
         self.hora_inicio = nueva_hora_inicio
         self.hora_fin = nueva_hora_fin
         self.estado = EstadoCita.REPROGRAMADA
         self.actualizado_en = datetime.now()
 
-        # Notificar a los observadores
         self.notify(
             CitaReprogramada(
                 cita_id=self.id,
@@ -204,17 +195,6 @@ class Cita(Subject):
                 fecha_nueva=fecha_nueva,
             )
         )
-
-    def establecer_monto(self, monto: Decimal, moneda: str = "ARS") -> None:
-        """
-        Establece el monto acordado de la consulta.
-
-        Args:
-            monto: Monto a cobrar
-            moneda: Código de moneda ISO-4217
-        """
-        self.monto_acordado = Dinero(monto=monto, moneda=moneda)
-        self.actualizado_en = datetime.now()
 
     def agregar_nota(self, nota: str) -> None:
         """Agrega una nota a la consulta"""
@@ -232,11 +212,9 @@ class Cita(Subject):
             True si hay conflicto, False en caso contrario
         """
         for otra in otras_citas:
-            # Solo comparar con citas en la misma fecha y no canceladas
             if otra.fecha != self.fecha or otra.esta_cancelada:
                 continue
 
-            # Verificar solapamiento de horarios
             if (
                 self.hora_inicio < otra.hora_fin
                 and self.hora_fin > otra.hora_inicio

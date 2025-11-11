@@ -9,11 +9,15 @@ from datetime import date
 class Especialidad:
     id: int
     nombre: str
+    tarifa: Decimal
 
 
 @dataclass
 class Tarifa:
-    """Tarifa por especialidad (vigente desde/hasta)."""
+    """
+    DEPRECATED: Tarifa ahora está directamente en Especialidad.
+    Esta clase queda para referencia futura si se implementa historial de tarifas.
+    """
 
     id: int
     id_especialidad: int
@@ -34,7 +38,7 @@ class Publicacion:
     """Aviso de un profesional (texto + especialidades asociadas)."""
 
     id: int
-    id_profesional: str  # UUID en string para no acoplar a tipos concretos
+    id_profesional: str
     titulo: str
     descripcion: str
     especialidades: List[Especialidad]
@@ -42,7 +46,6 @@ class Publicacion:
 
 @dataclass(frozen=True)
 class FiltroBusqueda:
-    # Todos los campos son opcionales; la estrategia decide cómo combinarlos.
     id_especialidad: Optional[int] = None
     nombre_especialidad: Optional[str] = None
     barrio: Optional[str] = None
