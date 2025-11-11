@@ -20,7 +20,6 @@ from app.api.policies import IntegrityPolicies
 from app.infra.repositories.consulta_repository import ConsultaRepository
 from app.infra.repositories.profesional_repository import ProfesionalRepository
 from app.infra.repositories.paciente_repository import PacienteRepository
-from app.infra.repositories.direccion_repository import DireccionRepository
 from app.domain.entities.agenda import Cita
 from app.domain.enumeraciones import EstadoCita
 from app.domain.value_objects.objetos_valor import Ubicacion

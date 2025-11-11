@@ -4,32 +4,31 @@ Servicio de autenticación: lógica de negocio mínima pero funcional.
 - Hasheamos contraseñas con Argon2 y verificamos con passlib.
 - Armamos y validamos JWTs (HS256) para sesiones cortas.
 - Registramos usuarios y manejamos el login con control de intentos fallidos.
+- Implementa refresh tokens y auditoría de login.
 """
 
 from typing import Optional
 from datetime import datetime, timedelta
 import os
+import secrets
 
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 
 from app.infra.repositories.usuario_repository import UsuarioRepository
+from app.infra.repositories.auth_repository import AuthRepository
 
-# Config de seguridad
-
-# Elegimos HS256 para el MVP; en producción cuidamos bien el SECRET_KEY.
 ALGORITHM = "HS256"
 
-# Tomamos la clave del entorno; si falta, usamos un default solo para dev.
 SECRET_KEY = os.getenv("AT_HOME_RED_SECRET", "dev-secret-change-me")
 
-# Definimos un TTL corto para el access token (en minutos).
 ACCESS_TOKEN_EXPIRE_MINUTES = int(
     os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
 )
 
-# Optamos por Argon2 para evitar líos de bcrypt en algunos Windows.
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "30"))
+
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
@@ -37,11 +36,9 @@ class AuthService:
     """Encapsulamos la lógica de autenticación en un servicio."""
 
     def __init__(self, db: Session):
-        # Guardamos la sesión y armamos el repo de usuarios a partir de ella.
         self.db = db
         self.usuario_repo = UsuarioRepository(db)
-
-    # PASSWORD HASHING
+        self.auth_repo = AuthRepository(db)
 
     @staticmethod
     def hash_password(password: str) -> str:
@@ -54,10 +51,7 @@ class AuthService:
         try:
             return pwd_context.verify(plain_password, hashed_password)
         except Exception:
-            # Preferimos responder False ante cualquier excepción por seguridad.
             return False
-
-    # JWT TOKENS
 
     @staticmethod
     def crear_access_token(
@@ -86,8 +80,6 @@ class AuthService:
         except JWTError:
             return None
 
-    # REGISTRO
-
     def registrar_usuario(
         self,
         email: str,
@@ -99,23 +91,18 @@ class AuthService:
         es_solicitante: bool = True,
     ) -> dict:
         """Registramos un usuario nuevo y devolvemos datos básicos para la API/UI."""
-        # Mantenemos roles excluyentes y garantizamos al menos uno.
         if es_profesional and es_solicitante:
             raise ValueError(
                 "Un usuario no puede ser profesional y solicitante a la vez"
             )
         if not es_profesional and not es_solicitante:
-            # Para el MVP preferimos default a solicitante.
             es_solicitante = True
 
-        # Verificamos unicidad de email.
         if self.usuario_repo.obtener_por_email(email):
             raise ValueError("El email ya está registrado")
 
-        # Hasheamos la contraseña antes de persistir.
         password_hash = self.hash_password(password)
 
-        # Creamos el usuario en la base.
         usuario = self.usuario_repo.crear_usuario(
             email=email,
             password_hash=password_hash,
@@ -126,7 +113,6 @@ class AuthService:
             es_solicitante=es_solicitante,
         )
 
-        # Armamos una respuesta sin datos sensibles.
         return {
             "id": str(usuario.id),
             "usuario_id": str(usuario.id),
@@ -149,20 +135,27 @@ class AuthService:
             ],
         }
 
-    # LOGIN
-
     def login(
         self,
         email: str,
         password: str,
-        ip_address: Optional[
-            str
-        ] = None,  # Lo reservamos para auditoría/rate-limit.
-        user_agent: Optional[str] = None,  # Ídem: nos sirve para trazabilidad.
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
     ) -> dict:
-        """Autenticamos y devolvemos {access_token, token_type} cuando todo sale bien."""
-        # Si el usuario está temporalmente bloqueado, cortamos el flujo.
+        """
+        Autenticamos y devolvemos {access_token, refresh_token, token_type}.
+
+        También registra el intento en auditoría.
+        """
+
         if self.usuario_repo.esta_bloqueado(email):
+            self.auth_repo.registrar_intento_login(
+                email=email,
+                exitoso=False,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                motivo="Usuario bloqueado por intentos fallidos",
+            )
             raise PermissionError(
                 "Usuario temporalmente bloqueado por intentos fallidos. "
                 "Intenta más tarde."
@@ -170,24 +163,131 @@ class AuthService:
 
         usuario = self.usuario_repo.obtener_por_email(email)
         if not usuario:
-            # No exponemos si existe: registramos el intento y devolvemos mensaje genérico.
             self.usuario_repo.incrementar_intentos_fallidos(email)
+            self.auth_repo.registrar_intento_login(
+                email=email,
+                exitoso=False,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                motivo="Usuario no existe",
+            )
             raise ValueError("Credenciales inválidas")
 
         if not usuario.activo:
+            self.auth_repo.registrar_intento_login(
+                email=email,
+                exitoso=False,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                motivo="Usuario inactivo",
+            )
             raise ValueError("Usuario inactivo")
 
         if not usuario.password_hash or not self.verify_password(
             password, usuario.password_hash
         ):
             self.usuario_repo.incrementar_intentos_fallidos(email)
+            self.auth_repo.registrar_intento_login(
+                email=email,
+                exitoso=False,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                motivo="Contraseña incorrecta",
+            )
             raise ValueError("Credenciales inválidas")
 
-        # Llegamos acá con login correcto: reseteamos intentos y guardamos último acceso.
         self.usuario_repo.resetear_intentos_fallidos(usuario.id)
         self.usuario_repo.actualizar_ultimo_login(usuario.id)
 
-        # Construimos los roles que vamos a meter en el token.
+        self.auth_repo.registrar_intento_login(
+            email=email,
+            exitoso=True,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            motivo=None,
+        )
+
+        roles = []
+        if getattr(usuario, "es_profesional", False):
+            roles.append("profesional")
+        if getattr(usuario, "es_solicitante", False):
+            roles.append("solicitante")
+
+        access_token = self.crear_access_token(
+            data={
+                "sub": str(usuario.id),
+                "email": usuario.email,
+                "roles": roles,
+            },
+            expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+        )
+
+        refresh_token_value = secrets.token_urlsafe(64)
+        refresh_expira = datetime.utcnow() + timedelta(
+            days=REFRESH_TOKEN_EXPIRE_DAYS
+        )
+
+        self.auth_repo.crear_refresh_token(
+            usuario_id=str(usuario.id),
+            token=refresh_token_value,
+            expira_en=refresh_expira,
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token_value,
+            "token_type": "bearer",
+        }
+
+    def logout(self, refresh_token: str) -> bool:
+        """
+        Revoca un refresh token (logout de una sesión específica).
+
+        Args:
+            refresh_token: Token a revocar
+
+        Returns:
+            True si se revocó exitosamente
+        """
+        return self.auth_repo.revocar_refresh_token(refresh_token)
+
+    def logout_all(self, usuario_id: str) -> int:
+        """
+        Cierra todas las sesiones de un usuario.
+
+        Args:
+            usuario_id: ID del usuario (UUID)
+
+        Returns:
+            Cantidad de sesiones cerradas
+        """
+        return self.auth_repo.revocar_todos_tokens_usuario(usuario_id)
+
+    def refresh_access_token(self, refresh_token: str) -> dict:
+        """
+        Genera un nuevo access token usando un refresh token válido.
+
+        Args:
+            refresh_token: Refresh token a validar
+
+        Returns:
+            dict con nuevo access_token
+
+        Raises:
+            ValueError si el token es inválido, expirado o revocado
+        """
+        token_orm = self.auth_repo.obtener_refresh_token(refresh_token)
+
+        if not token_orm:
+            raise ValueError("Refresh token inválido, expirado o revocado")
+
+        usuario = self.usuario_repo.obtener_por_id(token_orm.usuario_id)
+
+        if not usuario or not usuario.activo:
+            raise ValueError("Usuario no encontrado o inactivo")
+
         roles = []
         if getattr(usuario, "es_profesional", False):
             roles.append("profesional")
@@ -204,17 +304,3 @@ class AuthService:
         )
 
         return {"access_token": access_token, "token_type": "bearer"}
-
-    # LOGOUT / REFRESH (stubs)
-
-    def logout(self, refresh_token: str) -> bool:
-        """Dejamos asentado que esto va como stub hasta implementar refresh tokens."""
-        raise NotImplementedError(
-            "Logout/refresh no implementados en esta versión mínima"
-        )
-
-    def refresh_access_token(self, refresh_token: str) -> dict:
-        """Mantenemos el stub de refresh para una versión futura."""
-        raise NotImplementedError(
-            "Logout/refresh no implementados en esta versión mínima"
-        )

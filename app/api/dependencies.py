@@ -18,6 +18,8 @@ from app.services.auth_service import AuthService
 from app.api.policies import IntegrityPolicies
 from fastapi.security import OAuth2PasswordBearer
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
 
 def get_db() -> Generator[Session, None, None]:
     """
@@ -76,9 +78,6 @@ def get_catalogo_repository(
 def get_integrity_policies():
     """Dependency para acceder a las políticas de integridad"""
     return IntegrityPolicies
-
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 async def get_current_user(

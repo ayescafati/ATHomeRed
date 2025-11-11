@@ -17,13 +17,11 @@ app = FastAPI(
 )
 
 
-# Health check
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
 
 
-# Routers de la API
 app.include_router(auth.router, tags=["Autenticación"])
 app.include_router(busqueda.router, prefix="/busqueda", tags=["Búsqueda"])
 app.include_router(consultas.router, prefix="/consultas", tags=["Consultas"])
@@ -35,11 +33,9 @@ app.include_router(
     valoraciones.router, prefix="/valoraciones", tags=["Valoraciones"]
 )
 
-# Servir archivos estáticos (CSS, JS, imágenes)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
-# Servir el frontend en la raíz
 @app.get("/")
 def index():
     return FileResponse("app/static/index.html")

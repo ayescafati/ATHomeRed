@@ -52,7 +52,6 @@ class EspecialidadSchema(BaseModel):
 
     id: int
     nombre: str
-    tarifa: Decimal
 
     model_config = ConfigDict(from_attributes=True)
 
