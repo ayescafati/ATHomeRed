@@ -3,7 +3,7 @@ Repository para operaciones de autenticación y gestión de tokens.
 """
 
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
@@ -53,7 +53,7 @@ class AuthRepository:
             revocado=False,
             ip_address=ip_address,
             user_agent=user_agent,
-            creado_en=datetime.utcnow(),
+            creado_en=datetime.now(timezone.utc),
         )
 
         self.db.add(refresh_token)
@@ -83,7 +83,7 @@ class AuthRepository:
                 and_(
                     RefreshTokenORM.token == token,
                     RefreshTokenORM.revocado == False,
-                    RefreshTokenORM.expira_en > datetime.utcnow(),
+                    RefreshTokenORM.expira_en > datetime.now(timezone.utc),
                 )
             )
             .first()
@@ -153,7 +153,7 @@ class AuthRepository:
         """
         cantidad = (
             self.db.query(RefreshTokenORM)
-            .filter(RefreshTokenORM.expira_en < datetime.utcnow())
+            .filter(RefreshTokenORM.expira_en < datetime.now(timezone.utc))
             .delete()
         )
 
@@ -188,7 +188,7 @@ class AuthRepository:
             ip_address=ip_address,
             user_agent=user_agent,
             motivo=motivo,
-            fecha=datetime.utcnow(),
+            fecha=datetime.now(timezone.utc),
         )
 
         self.db.add(auditoria)
@@ -212,7 +212,7 @@ class AuthRepository:
 
         Uso: Detectar ataques de fuerza bruta y bloquear temporalmente
         """
-        tiempo_limite = datetime.utcnow() - timedelta(minutes=minutos)
+        tiempo_limite = datetime.now(timezone.utc) - timedelta(minutes=minutos)
 
         cantidad = (
             self.db.query(AuditoriaLoginORM)

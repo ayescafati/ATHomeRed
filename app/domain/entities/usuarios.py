@@ -43,6 +43,9 @@ class Profesional(Usuario):
     """
     Usuario que ofrece servicios profesionales de salud.
     Hereda de Usuario (tiene cuenta y credenciales).
+    
+    REGLA DE NEGOCIO: Todo profesional debe tener al menos una matrícula activa.
+    Las matrículas se almacenan en la tabla 'matricula' (relación 1:N).
     """
 
     verificado: bool = False
@@ -52,6 +55,15 @@ class Profesional(Usuario):
 
     def agregar_disponibilidad(self, d: Disponibilidad) -> None:
         self.disponibilidades.append(d)
+    
+    def tiene_matricula_valida(self) -> bool:
+        """Verifica que el profesional tenga al menos una matrícula activa"""
+        return len(self.matriculas) > 0
+    
+    def agregar_matricula(self, m: Matricula) -> None:
+        """Agrega una matrícula al profesional"""
+        if m not in self.matriculas:
+            self.matriculas.append(m)
 
 
 @dataclass

@@ -28,7 +28,7 @@ class DisponibilidadSchema(BaseModel):
     """Schema para disponibilidad horaria"""
 
     dias_semana: List[int] = Field(
-        description="Lista de días (0=Lunes, 6=Domingo)"
+        description="Lista de días (1=Lunes, 7=Domingo) - ISO 8601"
     )
     hora_inicio: time
     hora_fin: time
@@ -195,7 +195,7 @@ class BusquedaProfesionalRequest(BaseModel):
     departamento: Optional[str] = None
     barrio: Optional[str] = None
     dia_semana: Optional[int] = Field(
-        None, ge=0, le=6, description="0=Lunes, 6=Domingo"
+        None, ge=1, le=7, description="1=Lunes, 7=Domingo (ISO 8601)"
     )
     solo_verificados: bool = True
     solo_activos: bool = True

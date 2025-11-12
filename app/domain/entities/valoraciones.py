@@ -1,6 +1,6 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -12,7 +12,7 @@ class Valoracion:
     id_paciente: UUID
     puntuacion: int
     comentario: Optional[str] = None
-    fecha: datetime = datetime.utcnow()
+    fecha: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def __post_init__(self):
         if not (1 <= self.puntuacion <= 5):

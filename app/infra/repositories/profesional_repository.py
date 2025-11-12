@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
+import unicodedata
 
 from app.domain.entities.usuarios import Profesional
 from app.domain.entities.catalogo import Especialidad
@@ -19,13 +20,52 @@ from app.infra.persistence.ubicacion import (
     DepartamentoORM,
     ProvinciaORM,
 )
+
+from app.infra.persistence.agenda import DisponibilidadORM
+from app.infra.persistence.matriculas import MatriculaORM
+
+
 from app.infra.repositories.direccion_repository import DireccionRepository
 
+DIAS_NOMBRE_A_NUMERO = {
+    "lunes": DiaSemana.LUNES,
+    "martes": DiaSemana.MARTES,
+    "miercoles": DiaSemana.MIERCOLES,
+    "jueves": DiaSemana.JUEVES,
+    "viernes": DiaSemana.VIERNES,
+    "sabado": DiaSemana.SABADO,
+    "domingo": DiaSemana.DOMINGO,
+}
+
+
+def _normalizar_texto(texto: str) -> str:
+    """Normaliza texto removiendo acentos y convirtiendo a minúsculas"""
+    nfkd = unicodedata.normalize('NFD', texto)
+    return ''.join([c for c in nfkd if not unicodedata.combining(c)]).lower()
 
 class ProfesionalRepository:
     def __init__(self, session: Session):
         self.session = session
         self.direccion_repo = DireccionRepository(session)
+
+    def _convertir_dia_a_enum(self, dia: str) -> DiaSemana:
+        """
+        Convierte un día en formato texto o número a DiaSemana enum.
+        Soporta nombres de días en español (con o sin acentos) y números (1-7).
+        """
+        dia_limpio = dia.strip()
+        
+        if dia_limpio.isdigit():
+            return DiaSemana(int(dia_limpio))
+        
+        dia_normalizado = _normalizar_texto(dia_limpio)
+        
+        if dia_normalizado in DIAS_NOMBRE_A_NUMERO:
+            return DIAS_NOMBRE_A_NUMERO[dia_normalizado]
+        
+        raise ValueError(
+            f"Día no válido: '{dia}'. Debe ser un nombre de día en español o un número entre 1 y 7."
+        )
 
     def _to_domain(self, orm: ProfesionalORM) -> Profesional:
         """ORM → Dominio"""
@@ -56,15 +96,15 @@ class ProfesionalRepository:
             activo=orm.activo,
             verificado=orm.verificado,
             especialidades=[
-                Especialidad(id=e.id_especialidad, nombre=e.nombre)
+                Especialidad(id=e.id_especialidad, nombre=e.nombre, tarifa=e.tarifa)
                 for e in (orm.especialidades or [])
             ],
             disponibilidades=[
                 Disponibilidad(
                     dias_semana=[
-                        DiaSemana(int(d))
+                        self._convertir_dia_a_enum(d)
                         for d in disp.dias_semana
-                        if d.isdigit()
+                        if d and d.strip()
                     ],
                     hora_inicio=disp.hora_inicio,
                     hora_fin=disp.hora_fin,
@@ -73,8 +113,8 @@ class ProfesionalRepository:
             ],
             matriculas=[
                 Matricula(
-                    numero=m.numero,
-                    provincia=m.provincia,
+                    numero=m.nro_matricula,
+                    provincia=m.provincia.nombre,
                     vigente_desde=m.vigente_desde,
                     vigente_hasta=m.vigente_hasta,
                 )
@@ -159,9 +199,33 @@ class ProfesionalRepository:
             direccion_id=direccion_id,
             activo=profesional.activo,
             verificado=profesional.verificado,
-            matricula="",
         )
         self.session.add(orm)
+        self.session.flush()
+
+        if profesional.matriculas:
+            from datetime import timedelta
+            
+            for mat in profesional.matriculas:
+                provincia_orm = (
+                    self.session.query(ProvinciaORM)
+                    .filter(ProvinciaORM.nombre == mat.provincia)
+                    .first()
+                )
+                if not provincia_orm:
+                    raise ValueError(f"Provincia '{mat.provincia}' no encontrada")
+                
+                from app.infra.persistence.matriculas import MatriculaORM
+                
+                mat_orm = MatriculaORM(
+                    profesional_id=orm.id,
+                    provincia_id=provincia_orm.id,
+                    nro_matricula=mat.numero,
+                    vigente_desde=mat.vigente_desde,
+                    vigente_hasta=mat.vigente_hasta or (mat.vigente_desde + timedelta(days=3650)),
+                )
+                self.session.add(mat_orm)
+
         self.session.commit()
         self.session.refresh(orm)
 

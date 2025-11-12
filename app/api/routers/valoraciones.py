@@ -21,7 +21,7 @@ from app.infra.repositories.valoracion_repository import ValoracionRepository
 from app.infra.repositories.profesional_repository import ProfesionalRepository
 from app.infra.repositories.paciente_repository import PacienteRepository
 from app.domain.entities.valoraciones import Valoracion
-from datetime import datetime
+from datetime import datetime, timezone
 
 router = APIRouter()
 
@@ -69,7 +69,7 @@ def crear_valoracion(
             id_paciente=data.paciente_id,
             puntuacion=data.puntuacion,
             comentario=data.comentario,
-            fecha=datetime.utcnow(),
+            fecha=datetime.now(timezone.utc),
         )
 
         valoracion_creada = repo.crear(valoracion)

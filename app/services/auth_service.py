@@ -8,7 +8,7 @@ Servicio de autenticación: lógica de negocio mínima pero funcional.
 """
 
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 import secrets
 
@@ -62,7 +62,7 @@ class AuthService:
 
         `data` suele traer: {"sub": user_id, "email": email, "roles": [...]}"""
         to_encode = data.copy()
-        expire = datetime.utcnow() + (
+        expire = datetime.now(timezone.utc) + (
             expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         )
         to_encode.update({"exp": expire})
@@ -223,7 +223,7 @@ class AuthService:
         )
 
         refresh_token_value = secrets.token_urlsafe(64)
-        refresh_expira = datetime.utcnow() + timedelta(
+        refresh_expira = datetime.now(timezone.utc) + timedelta(
             days=REFRESH_TOKEN_EXPIRE_DAYS
         )
 

@@ -30,22 +30,12 @@ class PacienteRepository:
         Returns:
             Entidad Paciente del dominio
         """
-
-        ubicacion = None
-        if orm.direccion_id:
-            direccion_orm = (
-                self.session.query(DireccionORM)
-                .filter(DireccionORM.id == orm.direccion_id)
-                .first()
-            )
-
-            if direccion_orm:
-                ubicacion = self.direccion_repo._to_domain(direccion_orm)
-
-        if ubicacion is None:
-            ubicacion = Ubicacion(
-                provincia="", departamento="", barrio="", calle="", numero=""
-            )
+        # NOTA: Paciente NO tiene dirección propia
+        # La ubicación del servicio es siempre la del SOLICITANTE
+        # Por lo tanto, devolvemos ubicación vacía (no es relevante para el paciente)
+        ubicacion = Ubicacion(
+            provincia="", departamento="", barrio="", calle="", numero=""
+        )
 
         return Paciente(
             id=orm.id,
@@ -53,7 +43,7 @@ class PacienteRepository:
             apellido=orm.apellido,
             ubicacion=ubicacion,
             solicitante_id=orm.solicitante_id,
-            relacion=orm.relacion.nombre if orm.relacion else "self",
+            relacion=orm.relacion.nombre if orm.relacion else "Yo mismo",
             fecha_nacimiento=orm.fecha_nacimiento or date(2000, 1, 1),
             notas=orm.notas or "",
         )
@@ -164,10 +154,7 @@ class PacienteRepository:
         return [self._to_domain(orm) for orm in orms]
 
     def crear(
-        self,
-        paciente: Paciente,
-        solicitante_id: UUID,
-        direccion_id: Optional[UUID] = None,
+        self, paciente: Paciente, solicitante_id: UUID
     ) -> Paciente:
         """
         Crea un nuevo paciente en la base de datos.
@@ -175,31 +162,15 @@ class PacienteRepository:
         Args:
             paciente: Entidad Paciente del dominio
             solicitante_id: UUID del solicitante responsable
-            direccion_id: (Opcional) ID de dirección existente.
-                         Si no se proporciona y el paciente tiene ubicación,
-                         se crea automáticamente usando DireccionRepository.
 
         Returns:
             Paciente creado con datos actualizados
 
-        Example:
-            # Opción 1: Con dirección existente
-            paciente_repo.crear(paciente, solicitante_id, direccion_id=uuid_existente)
-
-            # Opción 2: Crear dirección automáticamente
-            paciente.ubicacion = Ubicacion(...)
-            paciente_repo.crear(paciente, solicitante_id)  # Crea la dirección
+        Note:
+            Paciente NO tiene dirección propia. 
+            La ubicación del servicio es la del SOLICITANTE.
         """
-
-        if direccion_id is None and paciente.ubicacion:
-
-            direccion_orm = self.direccion_repo.crear_con_jerarquia(
-                paciente.ubicacion
-            )
-            direccion_id = direccion_orm.id
-
         orm = self._to_orm(paciente, solicitante_id)
-        orm.direccion_id = direccion_id
 
         self.session.add(orm)
         self.session.commit()
@@ -207,32 +178,19 @@ class PacienteRepository:
 
         return self._to_domain(orm)
 
-    def actualizar(
-        self, paciente: Paciente, direccion_id: Optional[UUID] = None
-    ) -> Optional[Paciente]:
+    def actualizar(self, paciente: Paciente) -> Optional[Paciente]:
         """
         Actualiza un paciente existente.
 
         Args:
             paciente: Entidad Paciente con datos actualizados
-            direccion_id: (Opcional) Nueva dirección existente.
-                         Si no se proporciona pero paciente.ubicacion cambió,
-                         se crea automáticamente.
 
         Returns:
             Paciente actualizado o None si no existe
 
-        Example:
-            # Opción 1: Actualizar solo datos básicos
-            paciente.nombre = "Juan Carlos"
-            paciente_repo.actualizar(paciente)
-
-            # Opción 2: Cambiar a dirección existente
-            paciente_repo.actualizar(paciente, direccion_id=nueva_direccion_id)
-
-            # Opción 3: Cambiar ubicación (crea dirección automáticamente)
-            paciente.ubicacion = Ubicacion(...)
-            paciente_repo.actualizar(paciente)  # Crea nueva dirección
+        Note:
+            Paciente NO tiene dirección propia.
+            La ubicación del servicio es la del SOLICITANTE.
         """
         orm = (
             self.session.query(PacienteORM)
@@ -242,30 +200,6 @@ class PacienteRepository:
 
         if not orm:
             return None
-
-        if direccion_id:
-
-            orm.direccion_id = direccion_id
-        elif paciente.ubicacion:
-
-            ubicacion_actual = None
-            if orm.direccion_id:
-                direccion_orm = (
-                    self.session.query(DireccionORM)
-                    .filter(DireccionORM.id == orm.direccion_id)
-                    .first()
-                )
-                if direccion_orm:
-                    ubicacion_actual = self.direccion_repo._to_domain(
-                        direccion_orm
-                    )
-
-            if ubicacion_actual != paciente.ubicacion:
-
-                nueva_direccion = self.direccion_repo.crear_con_jerarquia(
-                    paciente.ubicacion
-                )
-                orm.direccion_id = nueva_direccion.id
 
         orm = self._to_orm(paciente, orm.solicitante_id, orm)
 

@@ -3,7 +3,7 @@ Repository para operaciones CRUD de usuarios (autenticación).
 """
 
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from app.infra.persistence.usuarios import UsuarioORM
@@ -112,7 +112,7 @@ class UsuarioRepository:
         usuario = self.obtener_por_id(usuario_id)
         if not usuario:
             return False
-        usuario.ultimo_login = datetime.utcnow()
+        usuario.ultimo_login = datetime.now(timezone.utc)
         usuario.intentos_fallidos = 0
         self.db.commit()
         return True
@@ -132,7 +132,7 @@ class UsuarioRepository:
             return 0
         usuario.intentos_fallidos = (usuario.intentos_fallidos or 0) + 1
         if usuario.intentos_fallidos >= 5:
-            usuario.bloqueado_hasta = datetime.utcnow() + timedelta(minutes=15)
+            usuario.bloqueado_hasta = datetime.now(timezone.utc) + timedelta(minutes=15)
         self.db.commit()
         return usuario.intentos_fallidos
 
@@ -167,7 +167,7 @@ class UsuarioRepository:
             return False
         if not usuario.bloqueado_hasta:
             return False
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if usuario.bloqueado_hasta > now:
             return True
         usuario.bloqueado_hasta = None

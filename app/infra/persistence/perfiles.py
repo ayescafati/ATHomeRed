@@ -55,9 +55,6 @@ class ProfesionalORM(Base):
         nullable=False, server_default=text("false")
     )
 
-    matricula: Mapped[Optional[str]] = mapped_column(
-        Varchar(50), nullable=True
-    )
 
     usuario: Mapped["UsuarioORM"] = relationship("UsuarioORM")
     direccion: Mapped[Optional["DireccionORM"]] = relationship("DireccionORM")

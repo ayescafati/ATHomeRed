@@ -14,7 +14,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import Base, SCHEMA
 
 
@@ -41,7 +41,7 @@ class RefreshTokenORM(Base):
     revocado = Column(Boolean, default=False, nullable=False)
     ip_address = Column(String(45), nullable=True)
     user_agent = Column(String(255), nullable=True)
-    creado_en = Column(DateTime, default=datetime.utcnow, nullable=False)
+    creado_en = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     usuario = relationship("UsuarioORM", back_populates="refresh_tokens")
 
@@ -59,5 +59,5 @@ class AuditoriaLoginORM(Base):
     user_agent = Column(String(255), nullable=True)
     motivo = Column(Text, nullable=True)
     fecha = Column(
-        DateTime, default=datetime.utcnow, nullable=False, index=True
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True
     )

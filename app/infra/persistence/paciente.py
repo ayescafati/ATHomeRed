@@ -47,27 +47,22 @@ class PacienteORM(Base):
     fecha_nacimiento: Mapped[Optional[date]] = mapped_column(nullable=True)
     notas: Mapped[str] = mapped_column(Text, default="", nullable=False)
 
-    direccion_id: Mapped[Optional[UUID]] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey(f"{SCHEMA}.direccion.id", ondelete="SET NULL"),
-    )
-
     solicitante_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey(f"{SCHEMA}.solicitante.id", ondelete="CASCADE"),
         nullable=False,
     )
 
-    relacion_id: Mapped[Optional[int]] = mapped_column(
+    relacion_id: Mapped[int] = mapped_column(
         ForeignKey(f"{SCHEMA}.relacion_solicitante.id", ondelete="RESTRICT"),
-        nullable=True,
+        nullable=False,
     )
 
     solicitante: Mapped["SolicitanteORM"] = relationship(
         "SolicitanteORM", back_populates="paciente", uselist=False
     )
 
-    relacion: Mapped[Optional["RelacionSolicitanteORM"]] = relationship(
+    relacion: Mapped["RelacionSolicitanteORM"] = relationship(
         "RelacionSolicitanteORM"
     )
 
