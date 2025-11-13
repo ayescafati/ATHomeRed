@@ -10,9 +10,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from app.infra.persistence.database import DATABASE_URL
 from app.infra.persistence.base import Base
-
 from app.infra.persistence import (
     usuarios,
     perfiles,
@@ -29,35 +27,28 @@ from app.infra.persistence import (
 
 config = context.config
 
-# Override sqlalchemy.url with our DATABASE_URL
-# Escapar % en la URL para evitar problemas con interpolacion de .ini
-database_url_escaped = DATABASE_URL.replace("%", "%%")
-config.set_main_option("sqlalchemy.url", database_url_escaped)
+env_database_url = os.getenv("DATABASE_URL")
+if env_database_url:
+    # Escape '%' to avoid .ini interpolation issues
+    escaped_url = env_database_url.replace("%", "%%")
+    config.set_main_option("sqlalchemy.url", escaped_url)
 
-# Interpret the config file for Python logging
+# Logging config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Add your model's MetaData object here for 'autogenerate' support
+# Metadata for autogenerate
 target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    """
-    Run migrations in 'offline' mode.
-
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well. By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-    """
+    """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        # Include only athome schema
         include_schemas=True,
         include_object=lambda obj, name, type_, reflected, compare_to: (
             obj.schema == "athome" if hasattr(obj, "schema") else True
@@ -72,12 +63,7 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """
-    Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-    """
+    """Run migrations in 'online' mode."""
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
@@ -88,7 +74,6 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            # Include only athome schema
             include_schemas=True,
             include_object=lambda obj, name, type_, reflected, compare_to: (
                 obj.schema == "athome" if hasattr(obj, "schema") else True
@@ -106,3 +91,4 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+
