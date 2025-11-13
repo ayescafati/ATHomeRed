@@ -91,26 +91,42 @@ BEGIN
 END $$;
 
 -- =============================================================================
--- 5. ESPECIALIDADES
+-- 5. ESPECIALIDADES (IDs fijos para referencia directa)
 -- =============================================================================
-INSERT INTO athome.especialidad (nombre, descripcion, tarifa) VALUES
- ('Acompañamiento Terapéutico General','Apoyo integral en salud mental.',15000),
- ('Acompañamiento Terapéutico Geriatría','Atención especializada adultos mayores.',15000),
- ('Acompañamiento Terapéutico (Especialización TEA/TDAH)','Intervención específica TEA y TDAH.',15000),
- ('Enfermería','Atención domiciliaria general.',18000),
- ('Enfermería Geriátrica','Cuidados especializados geriatría.',18000),
- ('Cuidados Paliativos','Atención integral en patologías terminales.',25000)
-ON CONFLICT (nombre) DO NOTHING;
+INSERT INTO athome.especialidad (id_especialidad, nombre, descripcion, tarifa) VALUES
+ (1,'Acompañamiento Terapéutico General','Apoyo integral en salud mental.',15000),
+ (2,'Acompañamiento Terapéutico Geriatría','Atención especializada adultos mayores.',15000),
+ (3,'Acompañamiento Terapéutico (Especialización TEA/TDAH)','Intervención específica TEA y TDAH.',15000),
+ (4,'Enfermería','Atención domiciliaria general.',18000),
+ (5,'Enfermería Geriátrica','Cuidados especializados geriatría.',18000),
+ (6,'Cuidados Paliativos','Atención integral en patologías terminales.',25000)
+ON CONFLICT (id_especialidad) DO NOTHING;
+-- Ajustar secuencia para que el próximo INSERT automático empiece en 7
+SELECT setval(pg_get_serial_sequence('athome.especialidad','id_especialidad'), 6);
 
 -- =============================================================================
--- 6. RELACIONES SOLICITANTE-PACIENTE (IDs fijos)
+-- 5b. ESTADOS DE CONSULTA (IDs fijos para referencia directa)
 -- =============================================================================
-INSERT INTO athome.relacion_solicitante (id,nombre) VALUES
-  (35,'Yo mismo'),(36,'Madre'),(37,'Padre'),(38,'Hijo'),(39,'Hija'),(40,'Hermano'),(41,'Hermana'),
-  (42,'Esposo'),(43,'Esposa'),(44,'Abuelo'),(45,'Abuela'),(46,'Tío'),(47,'Tía'),(48,'Tutor/a'),(49,'Otro familiar')
+INSERT INTO athome.estado_consulta (id, codigo, descripcion) VALUES
+ (1,'pendiente','Cita pendiente de confirmación'),
+ (2,'confirmada','Cita confirmada por ambas partes'),
+ (3,'en_curso','Consulta en progreso'),
+ (4,'completada','Consulta finalizada exitosamente'),
+ (5,'cancelada','Cita cancelada'),
+ (6,'reprogramada','Cita reprogramada para otra fecha')
 ON CONFLICT (id) DO NOTHING;
--- Ajustar secuencia para futuras inserciones automáticas
-SELECT setval(pg_get_serial_sequence('athome.relacion_solicitante','id'), (SELECT MAX(id) FROM athome.relacion_solicitante));
+-- Ajustar secuencia para que el próximo INSERT automático empiece en 7
+SELECT setval(pg_get_serial_sequence('athome.estado_consulta','id'), 6);
+
+-- =============================================================================
+-- 6. RELACIONES SOLICITANTE-PACIENTE (IDs fijos para referencia directa)
+-- =============================================================================
+INSERT INTO athome.relacion_solicitante (id, nombre) VALUES
+  (1,'Yo mismo'),(2,'Madre'),(3,'Padre'),(4,'Hijo'),(5,'Hija'),(6,'Hermano'),(7,'Hermana'),
+  (8,'Esposo'),(9,'Esposa'),(10,'Abuelo'),(11,'Abuela'),(12,'Tío'),(13,'Tía'),(14,'Tutor/a'),(15,'Otro familiar')
+ON CONFLICT (id) DO NOTHING;
+-- Ajustar secuencia para que el próximo INSERT automático empiece en 16
+SELECT setval(pg_get_serial_sequence('athome.relacion_solicitante','id'), 15);
 
 -- =============================================================================
 -- 7. 100 PROFESIONALES + MATRÍCULAS + ESPECIALIDAD (1 cada uno)
@@ -193,11 +209,11 @@ BEGIN
     ORDER BY RANDOM() LIMIT 1;
 
     IF v_prof_especialidad = 'Acompañamiento Terapéutico (Especialización TEA/TDAH)' THEN
-      v_edad := 5 + (i % 13); v_paciente_nombre := nombres_ninos[((i-1)%10)+1]; v_rel := CASE (i % 3) WHEN 0 THEN 36 WHEN 1 THEN 37 ELSE 48 END;
+      v_edad := 5 + (i % 13); v_paciente_nombre := nombres_ninos[((i-1)%10)+1]; v_rel := CASE (i % 3) WHEN 0 THEN 2 WHEN 1 THEN 3 ELSE 14 END; -- Madre, Padre, Tutor
     ELSIF v_prof_especialidad IN ('Acompañamiento Terapéutico Geriatría','Enfermería Geriátrica','Cuidados Paliativos') THEN
-      v_edad := 65 + (i % 26); v_paciente_nombre := nombres_mayores[((i-1)%10)+1]; v_rel := CASE (i % 5) WHEN 0 THEN 38 WHEN 1 THEN 39 WHEN 2 THEN 42 WHEN 3 THEN 43 ELSE 35 END;
+      v_edad := 65 + (i % 26); v_paciente_nombre := nombres_mayores[((i-1)%10)+1]; v_rel := CASE (i % 5) WHEN 0 THEN 4 WHEN 1 THEN 5 WHEN 2 THEN 8 WHEN 3 THEN 9 ELSE 1 END; -- Hijo, Hija, Esposo, Esposa, Yo mismo
     ELSE
-      v_edad := 25 + (i % 46); v_paciente_nombre := nombres_adultos[((i-1)%10)+1]; v_rel := CASE (i % 8) WHEN 0 THEN 35 WHEN 1 THEN 36 WHEN 2 THEN 37 WHEN 3 THEN 40 WHEN 4 THEN 41 WHEN 5 THEN 42 WHEN 6 THEN 43 ELSE 49 END;
+      v_edad := 25 + (i % 46); v_paciente_nombre := nombres_adultos[((i-1)%10)+1]; v_rel := CASE (i % 8) WHEN 0 THEN 1 WHEN 1 THEN 2 WHEN 2 THEN 3 WHEN 3 THEN 6 WHEN 4 THEN 7 WHEN 5 THEN 8 WHEN 6 THEN 9 ELSE 15 END; -- Yo mismo, Madre, Padre, Hermano, Hermana, Esposo, Esposa, Otro familiar
     END IF;
     v_fecha_nac := CURRENT_DATE - (v_edad || ' years')::INTERVAL;
 

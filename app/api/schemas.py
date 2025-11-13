@@ -107,12 +107,11 @@ class PacienteCreate(BaseModel):
     apellido: str = Field(min_length=2, max_length=50)
     fecha_nacimiento: date
     relacion: str = Field(
-        default="self",
-        description="Relación con el solicitante: self, hijo/a, padre/madre, tutor/a",
+        default="Yo mismo",
+        description="Relación con el solicitante. Ejemplos: 'Yo mismo', 'Madre', 'Padre', 'Hijo', 'Hija', 'Hermano', 'Hermana', 'Esposo', 'Esposa', 'Abuelo', 'Abuela', 'Tío', 'Tía', 'Tutor/a', 'Otro familiar'",
     )
     notas: Optional[str] = None
     ubicacion: UbicacionSchema
-    solicitante_id: UUID
 
 
 class PacienteResponse(BaseModel):

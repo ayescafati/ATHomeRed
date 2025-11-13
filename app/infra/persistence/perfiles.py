@@ -127,6 +127,6 @@ class SolicitanteORM(Base):
     paciente: Mapped[Optional["PacienteORM"]] = relationship(
         "PacienteORM",
         back_populates="solicitante",
-        uselist=False,
         cascade="all, delete-orphan",
+        uselist=False,
     )

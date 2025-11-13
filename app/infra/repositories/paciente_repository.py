@@ -6,6 +6,7 @@ from datetime import date
 from app.domain.entities.usuarios import Paciente
 from app.domain.value_objects.objetos_valor import Ubicacion
 from app.infra.persistence.paciente import PacienteORM
+from app.infra.persistence.relaciones import RelacionSolicitanteORM
 from app.infra.repositories.direccion_repository import DireccionRepository
 
 
@@ -61,6 +62,23 @@ class PacienteRepository:
         Returns:
             Modelo ORM del paciente
         """
+        # Buscar el ID de la relación por nombre
+        relacion_orm = (
+            self.session.query(RelacionSolicitanteORM)
+            .filter(RelacionSolicitanteORM.nombre.ilike(paciente.relacion))
+            .first()
+        )
+
+        # Si no se encuentra la relación, usar "Yo mismo" (id=1) por defecto
+        if not relacion_orm:
+            relacion_orm = (
+                self.session.query(RelacionSolicitanteORM)
+                .filter(RelacionSolicitanteORM.nombre == "Yo mismo")
+                .first()
+            )
+
+        relacion_id = relacion_orm.id if relacion_orm else 1
+
         if orm is None:
             orm = PacienteORM(
                 id=paciente.id,
@@ -69,12 +87,14 @@ class PacienteRepository:
                 fecha_nacimiento=paciente.fecha_nacimiento,
                 notas=paciente.notas,
                 solicitante_id=solicitante_id,
+                relacion_id=relacion_id,
             )
         else:
             orm.nombre = paciente.nombre
             orm.apellido = paciente.apellido
             orm.fecha_nacimiento = paciente.fecha_nacimiento
             orm.notas = paciente.notas
+            orm.relacion_id = relacion_id
 
         return orm
 

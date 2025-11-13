@@ -15,10 +15,12 @@ def limpiar_bd():
     print("=" * 80)
 
     try:
-        # Orden de eliminación respetando FKs (de hijos a padres)
         tablas_orden = [
+            "disponibilidad",
+            "publicacion",
             "consulta",
             "valoracion",
+            "profesional_especialidad",
             "matricula",
             "paciente",
             "solicitante",
@@ -30,34 +32,35 @@ def limpiar_bd():
             "provincia",
             "relacion_solicitante",
             "especialidad",
+            "estado_consulta",
             "auditoria_login",
         ]
 
-        print("\n🗑️  Eliminando datos de las tablas...")
+        print("\n Eliminando datos de las tablas...")
 
         for tabla in tablas_orden:
             print(f"   Limpiando athome.{tabla}...", end="")
             s.execute(text(f"DELETE FROM athome.{tabla}"))
             count = s.execute(text(f"SELECT COUNT(*) FROM athome.{tabla}")).scalar()
-            print(f" ✅ ({count} registros restantes)")
+            print(f" ({count} registros restantes)")
 
         s.commit()
 
-        print("\n📊 Verificación final:")
+        print("\n Verificación final:")
         for tabla in tablas_orden:
             count = s.execute(text(f"SELECT COUNT(*) FROM athome.{tabla}")).scalar()
             if count > 0:
-                print(f"   ⚠️  athome.{tabla}: {count} registros")
+                print(f" athome.{tabla}: {count} registros")
             else:
-                print(f"   ✅ athome.{tabla}: vacía")
+                print(f" athome.{tabla}: vacía")
 
         print("\n" + "=" * 80)
-        print("✅ BASE DE DATOS LIMPIA")
+        print("BASE DE DATOS LIMPIA")
         print("=" * 80)
 
     except Exception as e:
         s.rollback()
-        print(f"\n❌ ERROR: {e}")
+        print(f"\n ERROR: {e}")
         raise
     finally:
         s.close()

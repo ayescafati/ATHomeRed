@@ -21,7 +21,6 @@ def verify_seed():
     print("=" * 70)
     print()
 
-    # Queries de verificación
     queries = [
         ("Provincias", "SELECT COUNT(*) FROM athome.provincia"),
         ("Departamentos", "SELECT COUNT(*) FROM athome.departamento"),
@@ -53,7 +52,6 @@ def verify_seed():
     print("-" * 70)
     print()
 
-    # Distribución por especialidad
     print("DISTRIBUCIÓN DE PROFESIONALES POR ESPECIALIDAD:")
     print("-" * 70)
     cursor.execute(
@@ -71,7 +69,6 @@ def verify_seed():
     print("-" * 70)
     print()
 
-    # Distribución de pacientes por relación
     print("DISTRIBUCIÓN DE PACIENTES POR RELACIÓN:")
     print("-" * 70)
     cursor.execute(
@@ -83,12 +80,12 @@ def verify_seed():
     """
     )
     for row in cursor.fetchall():
-        if row[1] > 0:  # Solo mostrar relaciones con pacientes
+        if row[1] > 0:
             print(f"  {row[0]:<30} {row[1]:>5}")
 
     print()
     print("=" * 70)
-    print("✅ VERIFICACIÓN COMPLETADA")
+    print("VERIFICACIÓN COMPLETADA")
     print("=" * 70)
 
     cursor.close()

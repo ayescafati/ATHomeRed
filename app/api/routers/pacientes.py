@@ -31,13 +31,35 @@ def crear_paciente(
     POLICY APLICADA:
     - El solicitante que crea el paciente debe estar ACTIVO
     - Requiere autenticación
+    - El solicitante_id se obtiene automáticamente del usuario autenticado
 
     El paciente estará asociado a un solicitante (usuario que gestiona sus turnos).
     El email/celular de contacto se obtienen del solicitante.
     """
-    policies = IntegrityPolicies()
+    from app.infra.persistence.perfiles import SolicitanteORM
 
-    policies.validar_usuario_activo(db, data.solicitante_id)
+    # Obtener el solicitante_id del usuario autenticado
+    solicitante = (
+        db.query(SolicitanteORM)
+        .filter(SolicitanteORM.usuario_id == current_user.id)
+        .first()
+    )
+
+    if not solicitante:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="El usuario no es un solicitante",
+        )
+
+    # Verificar si ya tiene un paciente (relación 1-1)
+    if solicitante.paciente is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Este solicitante ya tiene un paciente registrado. Solo se permite un paciente por solicitante.",
+        )
+
+    policies = IntegrityPolicies()
+    policies.validar_usuario_activo(db, current_user.id)
 
     ubicacion = Ubicacion(
         provincia=data.ubicacion.provincia,
@@ -55,12 +77,12 @@ def crear_paciente(
         apellido=data.apellido,
         fecha_nacimiento=data.fecha_nacimiento,
         ubicacion=ubicacion,
-        solicitante_id=data.solicitante_id,
+        solicitante_id=solicitante.id,
         relacion=data.relacion,
         notas=data.notas or "",
     )
 
-    paciente_creado = repo.crear(paciente, solicitante_id=data.solicitante_id)
+    paciente_creado = repo.crear(paciente, solicitante_id=solicitante.id)
 
     return paciente_creado
 
