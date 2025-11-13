@@ -14,7 +14,6 @@ from sqlalchemy.pool import StaticPool
 from app.main import app
 from app.api.dependencies import get_db
 from tests.api.auth_minimal_models import Base, UsuarioORM, RefreshTokenORM
-import types
 
 
 def _setup_sqlite_memory():
