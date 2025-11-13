@@ -13,17 +13,18 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from app.infra.persistence.database import DATABASE_URL
 from app.infra.persistence.base import Base
 
-from app.infra.persistence import (
+# Import all ORM models so Alembic can detect them
+from app.infra.persistence import (  # noqa: F401
     usuarios,
     perfiles,
-    servicios,
+    paciente,
     ubicacion,
+    servicios,
     agenda,
+    valoraciones,
     matriculas,
     publicaciones,
     relaciones,
-    paciente,
-    valoraciones,
     auth,
 )
 
