@@ -46,10 +46,18 @@ def crear_paciente(
     )
 
     if not solicitante:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="El usuario no es un solicitante",
-        )
+        # Para facilitar el flujo de demo (y ambientes donde no se corrió el seed completo),
+        # si el usuario tiene rol de solicitante pero aún no tiene fila en SolicitanteORM,
+        # la creamos automáticamente.
+        if not getattr(current_user, "es_solicitante", False):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="El usuario no es un solicitante",
+            )
+
+        solicitante = SolicitanteORM(usuario_id=current_user.id)
+        db.add(solicitante)
+        db.flush()
 
     # Verificar si ya tiene un paciente (relación 1-1)
     if solicitante.paciente is not None:

@@ -97,7 +97,9 @@ def crear_profesional(
             matriculas=matriculas,
         )
 
-        profesional_creado = repo.crear(profesional)
+        # Vinculamos el profesional al usuario autenticado para que el flujo de demo
+        # quede consistente (un usuario ↔ un perfil profesional).
+        profesional_creado = repo.crear(profesional, usuario_id=current_user.id)
 
         return profesional_creado
 
