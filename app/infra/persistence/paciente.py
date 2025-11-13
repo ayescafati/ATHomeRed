@@ -27,11 +27,13 @@ if TYPE_CHECKING:
 class PacienteORM(Base):
     __tablename__ = "paciente"
     __table_args__ = (
+        UniqueConstraint(
+            "solicitante_id", name="uq_paciente_solicitante"
+        ),  # fuerza 1–1
         CheckConstraint(
             "fecha_nacimiento IS NULL OR fecha_nacimiento <= CURRENT_DATE",
             name="ck_paciente_fecha_nac_pasada",
         ),
-        UniqueConstraint("solicitante_id", name="uq_paciente_solicitante"),
         {"schema": SCHEMA},
     )
 
