@@ -107,12 +107,11 @@ class PacienteCreate(BaseModel):
     apellido: str = Field(min_length=2, max_length=50)
     fecha_nacimiento: date
     relacion: str = Field(
-        default="self",
-        description="Relación con el solicitante: self, hijo/a, padre/madre, tutor/a",
+        default="Yo mismo",
+        description="Relación con el solicitante. Ejemplos: 'Yo mismo', 'Madre', 'Padre', 'Hijo', 'Hija', 'Hermano', 'Hermana', 'Esposo', 'Esposa', 'Abuelo', 'Abuela', 'Tío', 'Tía', 'Tutor/a', 'Otro familiar'",
     )
     notas: Optional[str] = None
     ubicacion: UbicacionSchema
-    solicitante_id: UUID  
 
 
 class PacienteResponse(BaseModel):
@@ -150,7 +149,7 @@ class ConsultaCreate(BaseModel):
 
     profesional_id: UUID
     paciente_id: UUID
-    solicitante_id: UUID  
+    solicitante_id: UUID
     fecha: date
     hora_inicio: time
     hora_fin: time
@@ -167,7 +166,7 @@ class ConsultaResponse(BaseModel):
     fecha: date
     hora_inicio: time
     hora_fin: time
-    estado: str 
+    estado: str
     ubicacion: UbicacionSchema
     motivo: Optional[str]
     notas: Optional[str]
@@ -214,9 +213,7 @@ class ValoracionCreate(BaseModel):
 
     profesional_id: UUID
     paciente_id: UUID
-    puntuacion: int = Field(
-        ge=1, le=5, description="Puntuación de 1 a 5 estrellas"
-    )
+    puntuacion: int = Field(ge=1, le=5, description="Puntuación de 1 a 5 estrellas")
     comentario: Optional[str] = Field(None, max_length=500)
 
 

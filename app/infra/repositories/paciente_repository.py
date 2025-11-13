@@ -6,7 +6,7 @@ from datetime import date
 from app.domain.entities.usuarios import Paciente
 from app.domain.value_objects.objetos_valor import Ubicacion
 from app.infra.persistence.paciente import PacienteORM
-from app.infra.persistence.ubicacion import DireccionORM
+from app.infra.persistence.relaciones import RelacionSolicitanteORM
 from app.infra.repositories.direccion_repository import DireccionRepository
 
 
@@ -62,8 +62,24 @@ class PacienteRepository:
         Returns:
             Modelo ORM del paciente
         """
-        if orm is None:
+        # Buscar el ID de la relación por nombre
+        relacion_orm = (
+            self.session.query(RelacionSolicitanteORM)
+            .filter(RelacionSolicitanteORM.nombre.ilike(paciente.relacion))
+            .first()
+        )
 
+        # Si no se encuentra la relación, usar "Yo mismo" (id=1) por defecto
+        if not relacion_orm:
+            relacion_orm = (
+                self.session.query(RelacionSolicitanteORM)
+                .filter(RelacionSolicitanteORM.nombre == "Yo mismo")
+                .first()
+            )
+
+        relacion_id = relacion_orm.id if relacion_orm else 1
+
+        if orm is None:
             orm = PacienteORM(
                 id=paciente.id,
                 nombre=paciente.nombre,
@@ -71,13 +87,14 @@ class PacienteRepository:
                 fecha_nacimiento=paciente.fecha_nacimiento,
                 notas=paciente.notas,
                 solicitante_id=solicitante_id,
+                relacion_id=relacion_id,
             )
         else:
-
             orm.nombre = paciente.nombre
             orm.apellido = paciente.apellido
             orm.fecha_nacimiento = paciente.fecha_nacimiento
             orm.notas = paciente.notas
+            orm.relacion_id = relacion_id
 
         return orm
 
@@ -91,11 +108,7 @@ class PacienteRepository:
         Returns:
             Paciente o None si no existe
         """
-        orm = (
-            self.session.query(PacienteORM)
-            .filter(PacienteORM.id == id)
-            .first()
-        )
+        orm = self.session.query(PacienteORM).filter(PacienteORM.id == id).first()
 
         return self._to_domain(orm) if orm else None
 
@@ -130,9 +143,7 @@ class PacienteRepository:
 
         return [self._to_domain(orm) for orm in orms]
 
-    def buscar_por_nombre(
-        self, nombre: str, apellido: str = None
-    ) -> List[Paciente]:
+    def buscar_por_nombre(self, nombre: str, apellido: str = None) -> List[Paciente]:
         """
         Busca pacientes por nombre y opcionalmente por apellido.
 
@@ -153,9 +164,7 @@ class PacienteRepository:
         orms = query.all()
         return [self._to_domain(orm) for orm in orms]
 
-    def crear(
-        self, paciente: Paciente, solicitante_id: UUID
-    ) -> Paciente:
+    def crear(self, paciente: Paciente, solicitante_id: UUID) -> Paciente:
         """
         Crea un nuevo paciente en la base de datos.
 
@@ -167,7 +176,7 @@ class PacienteRepository:
             Paciente creado con datos actualizados
 
         Note:
-            Paciente NO tiene dirección propia. 
+            Paciente NO tiene dirección propia.
             La ubicación del servicio es la del SOLICITANTE.
         """
         orm = self._to_orm(paciente, solicitante_id)
@@ -218,11 +227,7 @@ class PacienteRepository:
         Returns:
             True si se eliminó, False si no existía
         """
-        orm = (
-            self.session.query(PacienteORM)
-            .filter(PacienteORM.id == id)
-            .first()
-        )
+        orm = self.session.query(PacienteORM).filter(PacienteORM.id == id).first()
 
         if not orm:
             return False
