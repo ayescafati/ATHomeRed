@@ -12,6 +12,7 @@ from app.infra.persistence.agenda import (
     EventoORM,
     EstadoConsultaORM,
 )
+from app.infra.persistence.perfiles import ProfesionalORM
 
 
 class ConsultaRepository:
@@ -186,7 +187,7 @@ class ConsultaRepository:
 
         return [self._to_domain(orm) for orm in query.all()]
 
-    def crear(self, cita: Cita, direccion_id: UUID) -> Cita:
+    def crear(self, cita: Cita, direccion_id: Optional[UUID] = None) -> Cita:
         """
         Crea una nueva cita en la base de datos.
 
@@ -198,6 +199,19 @@ class ConsultaRepository:
             Cita creada con datos actualizados
         """
         orm = self._to_orm(cita)
+
+        if direccion_id is None:
+            prof_orm = (
+                self.session.query(ProfesionalORM)
+                .filter(ProfesionalORM.id == cita.profesional_id)
+                .first()
+            )
+            if not prof_orm or not prof_orm.direccion_id:
+                raise ValueError(
+                    "El profesional no tiene una dirección de servicio configurada"
+                )
+            direccion_id = prof_orm.direccion_id
+
         orm.direccion_servicio_id = direccion_id
 
         self.session.add(orm)

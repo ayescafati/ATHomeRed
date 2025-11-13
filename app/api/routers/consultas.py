@@ -18,6 +18,12 @@ from app.api.dependencies import (
 )
 from app.api.event_bus import get_event_bus
 from app.api.policies import IntegrityPolicies
+from app.api.exceptions import (
+    BusinessRuleException,
+    ResourceNotFoundException,
+    ForbiddenException,
+    ConflictException,
+)
 from app.infra.repositories.consulta_repository import ConsultaRepository
 from app.infra.repositories.profesional_repository import ProfesionalRepository
 from app.infra.repositories.paciente_repository import PacienteRepository
@@ -34,6 +40,27 @@ from app.domain.eventos import (
 from app.domain.observers.observadores import EventBus, NotificadorEmail
 
 router = APIRouter()
+
+
+def _cita_to_response(cita: Cita) -> ConsultaResponse:
+    """
+    Adaptador Dominio → API.
+    Mapea la entidad de dominio `Cita` al schema `ConsultaResponse`,
+    alineando nombres de campos (motivo_consulta → motivo, creado_en → created_at).
+    """
+    return ConsultaResponse(
+        id=cita.id,
+        profesional_id=cita.profesional_id,
+        paciente_id=cita.paciente_id,
+        fecha=cita.fecha,
+        hora_inicio=cita.hora_inicio,
+        hora_fin=cita.hora_fin,
+        estado=cita.estado.value,
+        ubicacion=cita.ubicacion,
+        motivo=cita.motivo_consulta or None,
+        notas=cita.notas or None,
+        created_at=cita.creado_en,
+    )
 
 
 @router.post("/", response_model=ConsultaResponse, status_code=status.HTTP_201_CREATED)
@@ -136,14 +163,7 @@ def crear_consulta(
             notas="",
         )
 
-        cita_creada = repo.crear(
-            cita,
-            direccion_id=(
-                profesional.ubicacion.id
-                if hasattr(profesional.ubicacion, "id")
-                else None
-            ),
-        )
+        cita_creada = repo.crear(cita)
 
         evento = CitaCreada(
             cita_id=cita_creada.id,
@@ -153,10 +173,17 @@ def crear_consulta(
         )
         event_bus.publicar(evento)
 
-        return cita_creada
+        return _cita_to_response(cita_creada)
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except (
+        BusinessRuleException,
+        ResourceNotFoundException,
+        ForbiddenException,
+        ConflictException,
+    ):
+        raise
     except HTTPException:
         raise
     except Exception as e:
@@ -182,7 +209,7 @@ def obtener_consulta(
             detail=f"Consulta con ID {consulta_id} no encontrada",
         )
 
-    return consulta
+    return _cita_to_response(consulta)
 
 
 @router.get("/profesional/{profesional_id}", response_model=List[ConsultaResponse])
@@ -204,7 +231,7 @@ def listar_consultas_profesional(
         profesional_id, desde=desde, hasta=hasta, solo_activas=solo_activas
     )
 
-    return consultas
+    return [_cita_to_response(c) for c in consultas]
 
 
 @router.get("/paciente/{paciente_id}", response_model=List[ConsultaResponse])
@@ -224,7 +251,7 @@ def listar_consultas_paciente(
         paciente_id, desde=desde, solo_activas=solo_activas
     )
 
-    return consultas
+    return [_cita_to_response(c) for c in consultas]
 
 
 @router.put("/{consulta_id}", response_model=ConsultaResponse)
@@ -271,7 +298,7 @@ def actualizar_consulta(
                 detail="Error al actualizar consulta",
             )
 
-        return consulta_actualizada
+        return _cita_to_response(consulta_actualizada)
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -331,7 +358,7 @@ def confirmar_consulta(
         evento = CitaConfirmada(cita_id=consulta_id, confirmado_por=confirmado_por)
         event_bus.publicar(evento)
 
-        return consulta_actualizada
+        return _cita_to_response(consulta_actualizada)
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -433,7 +460,7 @@ def completar_consulta(
         evento = CitaCompletada(cita_id=consulta_id, notas=notas_finales)
         event_bus.publicar(evento)
 
-        return consulta_actualizada
+        return _cita_to_response(consulta_actualizada)
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -501,7 +528,7 @@ def reprogramar_consulta(
         )
         event_bus.publicar(evento)
 
-        return consulta_actualizada
+        return _cita_to_response(consulta_actualizada)
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

@@ -15,6 +15,9 @@ from app.infra.repositories.paciente_repository import PacienteRepository
 from app.domain.entities.usuarios import Paciente
 from app.domain.value_objects.objetos_valor import Ubicacion
 
+# DEMO ONLY IMPORT:
+from app.infra.persistence.perfiles import SolicitanteORM
+
 router = APIRouter()
 
 
@@ -36,9 +39,8 @@ def crear_paciente(
     El paciente estará asociado a un solicitante (usuario que gestiona sus turnos).
     El email/celular de contacto se obtienen del solicitante.
     """
-    from app.infra.persistence.perfiles import SolicitanteORM
 
-    # Obtener el solicitante_id del usuario autenticado
+    # Obtener el solicitante_id del usuario autenticado (perfil SolicitanteORM)
     solicitante = (
         db.query(SolicitanteORM)
         .filter(SolicitanteORM.usuario_id == current_user.id)
@@ -46,13 +48,11 @@ def crear_paciente(
     )
 
     if not solicitante:
-        # Para facilitar el flujo de demo (y ambientes donde no se corrió el seed completo),
-        # si el usuario tiene rol de solicitante pero aún no tiene fila en SolicitanteORM,
-        # la creamos automáticamente.
+        # DEMO ONLY: crear perfil solicitante si no existe
         if not getattr(current_user, "es_solicitante", False):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="El usuario no es un solicitante",
+                detail="El usuario no es un solicitante válido",
             )
 
         solicitante = SolicitanteORM(usuario_id=current_user.id)
@@ -63,7 +63,10 @@ def crear_paciente(
     if solicitante.paciente is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Este solicitante ya tiene un paciente registrado. Solo se permite un paciente por solicitante.",
+            detail=(
+                "Este solicitante ya tiene un paciente registrado. "
+                "Solo se permite un paciente por solicitante."
+            ),
         )
 
     policies = IntegrityPolicies()
