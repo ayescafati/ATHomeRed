@@ -14,7 +14,9 @@ from app.api.schemas import (
 from app.api.dependencies import (
     get_profesional_repository,
     get_catalogo_repository,
+    get_current_user,
 )
+from app.api.exceptions import ResourceNotFoundException
 from app.infra.repositories.profesional_repository import ProfesionalRepository
 from app.infra.repositories.catalogo_repository import CatalogoRepository
 from app.domain.entities.usuarios import Profesional
@@ -37,30 +39,30 @@ def crear_profesional(
     data: ProfesionalCreate,
     repo: ProfesionalRepository = Depends(get_profesional_repository),
     catalogo_repo: CatalogoRepository = Depends(get_catalogo_repository),
+    current_user=Depends(get_current_user),
 ):
     """
     Crea un nuevo profesional en el sistema.
+    Requiere autenticación.
     """
-    try:
-        ubicacion = Ubicacion(
-            provincia=data.ubicacion.provincia,
-            departamento=data.ubicacion.departamento,
-            barrio=data.ubicacion.barrio,
-            calle=data.ubicacion.calle,
-            numero=data.ubicacion.numero,
-            latitud=data.ubicacion.latitud,
-            longitud=data.ubicacion.longitud,
-        )
+    ubicacion = Ubicacion(
+        provincia=data.ubicacion.provincia,
+        departamento=data.ubicacion.departamento,
+        barrio=data.ubicacion.barrio,
+        calle=data.ubicacion.calle,
+        numero=data.ubicacion.numero,
+        latitud=data.ubicacion.latitud,
+        longitud=data.ubicacion.longitud,
+    )
 
-        especialidades = []
-        for esp_id in data.especialidades:
-            especialidad = catalogo_repo.obtener_especialidad_por_id(esp_id)
-            if not especialidad:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"Especialidad con ID {esp_id} no encontrada",
-                )
-            especialidades.append(especialidad)
+    especialidades = []
+    for esp_id in data.especialidades:
+        especialidad = catalogo_repo.obtener_especialidad_por_id(esp_id)
+        if not especialidad:
+            raise ResourceNotFoundException(
+                f"Especialidad con ID {esp_id} no encontrada"
+            )
+        especialidades.append(especialidad)
 
         disponibilidades = [
             Disponibilidad(
@@ -99,29 +101,22 @@ def crear_profesional(
 
         return profesional_creado
 
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error al crear profesional: {str(e)}",
-        )
-
 
 @router.get("/{profesional_id}", response_model=ProfesionalResponse)
 def obtener_profesional(
     profesional_id: UUID,
     repo: ProfesionalRepository = Depends(get_profesional_repository),
+    current_user=Depends(get_current_user),
 ):
     """
     Obtiene un profesional por su ID.
+    Requiere autenticación.
     """
     profesional = repo.obtener_por_id(profesional_id)
 
     if not profesional:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Profesional con ID {profesional_id} no encontrado",
+        raise ResourceNotFoundException(
+            f"Profesional con ID {profesional_id} no encontrado"
         )
 
     return profesional

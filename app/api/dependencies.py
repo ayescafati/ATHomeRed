@@ -16,6 +16,7 @@ from app.infra.repositories.direccion_repository import DireccionRepository
 from app.infra.repositories.catalogo_repository import CatalogoRepository
 from app.services.auth_service import AuthService
 from app.api.policies import IntegrityPolicies
+from app.api.exceptions import ForbiddenException
 from fastapi.security import OAuth2PasswordBearer
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
@@ -126,3 +127,43 @@ async def get_current_user(
         )
 
     return usuario
+
+
+async def get_current_profesional(
+    current_user=Depends(get_current_user),
+):
+    """
+    Obtiene el usuario autenticado y verifica que sea profesional.
+
+    Returns:
+        Usuario ORM entity con es_profesional=True
+
+    Raises:
+        ForbiddenException: Si el usuario no es profesional
+    """
+    if not getattr(current_user, "es_profesional", False):
+        raise ForbiddenException(
+            "Se requiere ser profesional para acceder a este recurso"
+        )
+
+    return current_user
+
+
+async def get_current_solicitante(
+    current_user=Depends(get_current_user),
+):
+    """
+    Obtiene el usuario autenticado y verifica que sea solicitante.
+
+    Returns:
+        Usuario ORM entity con es_solicitante=True
+
+    Raises:
+        ForbiddenException: Si el usuario no es solicitante
+    """
+    if not getattr(current_user, "es_solicitante", False):
+        raise ForbiddenException(
+            "Se requiere ser solicitante para acceder a este recurso"
+        )
+
+    return current_user

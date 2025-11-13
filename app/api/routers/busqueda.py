@@ -15,6 +15,7 @@ from app.api.dependencies import (
     get_direccion_repository,
     get_catalogo_repository,
 )
+from app.api.exceptions import ResourceNotFoundException, BusinessRuleException
 from app.infra.repositories.profesional_repository import ProfesionalRepository
 from app.infra.repositories.direccion_repository import DireccionRepository
 from app.infra.repositories.catalogo_repository import CatalogoRepository
@@ -46,82 +47,67 @@ def buscar_profesionales(
     - Solo verificados/activos
     """
 
-    try:
-        if criterios.departamento and not criterios.provincia:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Se debe especificar la provincia si se indica el departamento.",
-            )
-
-        if criterios.barrio and not criterios.departamento:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Se debe especificar el departamento si se indica el barrio.",
-            )
-
-        especialidad_id = criterios.especialidad_id
-        especialidad_nombre = criterios.nombre_especialidad
-
-        if especialidad_nombre and not especialidad_id:
-            especialidad = catalogo_repo.obtener_especialidad_por_nombre(
-                especialidad_nombre
-            )
-            if especialidad:
-                especialidad_id = especialidad.id
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"No se encontró la especialidad '{especialidad_nombre}'",
-                )
-
-        if especialidad_id:
-            especialidad = catalogo_repo.obtener_especialidad_por_id(especialidad_id)
-            if not especialidad:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"No existe la especialidad con ID {especialidad_id}",
-                )
-            especialidad_nombre = especialidad.nombre
-
-        filtro = FiltroBusqueda(
-            id_especialidad=especialidad_id,
-            nombre_especialidad=especialidad_nombre,
-            provincia=criterios.provincia,
-            departamento=criterios.departamento,
-            barrio=criterios.barrio,
+    if criterios.departamento and not criterios.provincia:
+        raise BusinessRuleException(
+            "Se debe especificar la provincia si se indica el departamento."
         )
 
-        if (filtro.id_especialidad or filtro.nombre_especialidad) and (
-            filtro.provincia or filtro.departamento or filtro.barrio
-        ):
-            estrategia = BusquedaCombinada()
-        elif filtro.id_especialidad or filtro.nombre_especialidad:
-            estrategia = BusquedaPorEspecialidad()
-        elif filtro.provincia or filtro.departamento or filtro.barrio:
-            estrategia = BusquedaPorZona()
+    if criterios.barrio and not criterios.departamento:
+        raise BusinessRuleException(
+            "Se debe especificar el departamento si se indica el barrio."
+        )
 
+    especialidad_id = criterios.especialidad_id
+    especialidad_nombre = criterios.nombre_especialidad
+
+    if especialidad_nombre and not especialidad_id:
+        especialidad = catalogo_repo.obtener_especialidad_por_nombre(
+            especialidad_nombre
+        )
+        if especialidad:
+            especialidad_id = especialidad.id
         else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Se debe especificar un criterio de búsqueda válido.",
+            raise ResourceNotFoundException(
+                f"No se encontró la especialidad '{especialidad_nombre}'"
             )
 
-        buscador = Buscador(repo, estrategia)
-        profesionales = buscador.buscar(filtro)
+    if especialidad_id:
+        especialidad = catalogo_repo.obtener_especialidad_por_id(especialidad_id)
+        if not especialidad:
+            raise ResourceNotFoundException(
+                f"No existe la especialidad con ID {especialidad_id}"
+            )
+        especialidad_nombre = especialidad.nombre
 
-        return BusquedaProfesionalResponse(
-            profesionales=profesionales,
-            total=len(profesionales),
-            criterios_aplicados=filtro.__dict__,
+    filtro = FiltroBusqueda(
+        id_especialidad=especialidad_id,
+        nombre_especialidad=especialidad_nombre,
+        provincia=criterios.provincia,
+        departamento=criterios.departamento,
+        barrio=criterios.barrio,
+    )
+
+    if (filtro.id_especialidad or filtro.nombre_especialidad) and (
+        filtro.provincia or filtro.departamento or filtro.barrio
+    ):
+        estrategia = BusquedaCombinada()
+    elif filtro.id_especialidad or filtro.nombre_especialidad:
+        estrategia = BusquedaPorEspecialidad()
+    elif filtro.provincia or filtro.departamento or filtro.barrio:
+        estrategia = BusquedaPorZona()
+    else:
+        raise BusinessRuleException(
+            "Se debe especificar un criterio de búsqueda válido."
         )
 
-    except ValueError as ve:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error en búsqueda: {str(e)}",
-        )
+    buscador = Buscador(repo, estrategia)
+    profesionales = buscador.buscar(filtro)
+
+    return BusquedaProfesionalResponse(
+        profesionales=profesionales,
+        total=len(profesionales),
+        criterios_aplicados=filtro.__dict__,
+    )
 
 
 @router.get("/especialidades")
