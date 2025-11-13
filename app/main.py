@@ -34,6 +34,7 @@ app.include_router(valoraciones.router, prefix="/valoraciones", tags=["Valoracio
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
+@app.head("/", include_in_schema=False)
 def index():
     return FileResponse("app/static/index.html")
