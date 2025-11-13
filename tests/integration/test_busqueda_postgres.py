@@ -5,7 +5,7 @@ Usa BD separada + rollback automático de transacciones
 
 import pytest
 from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session
 from sqlalchemy.pool import NullPool
 
 from app.main import app
@@ -13,9 +13,7 @@ from app.api.dependencies import get_db
 from app.infra.persistence.base import Base
 
 
-POSTGRES_TEST_URL = (
-    "postgresql://postgres:password@localhost:5432/athomered_test"
-)
+POSTGRES_TEST_URL = "postgresql://postgres:password@localhost:5432/athomered_test"
 
 
 @pytest.fixture(scope="session")
@@ -52,7 +50,7 @@ def db_session_postgres(postgres_test_engine):
 
     session = Session(bind=connection)
 
-    nested = connection.begin_nested()
+    connection.begin_nested()
 
     @event.listens_for(session, "after_transaction_end")
     def restart_savepoint(sess, trans):
@@ -155,17 +153,13 @@ class TestIntegracionPostgreSQL:
 
     @pytest.mark.integration
     @pytest.mark.postgres
-    def test_busqueda_con_profesional_en_bd(
-        self, client_postgres, seed_postgres_data
-    ):
+    def test_busqueda_con_profesional_en_bd(self, client_postgres, seed_postgres_data):
         """
         Test completo: profesional en BD → buscar → encontrar
         """
         payload = {"nombre_especialidad": "Cardiología"}
 
-        response = client_postgres.post(
-            "/busqueda/profesionales", json=payload
-        )
+        response = client_postgres.post("/busqueda/profesionales", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -177,18 +171,14 @@ class TestIntegracionPostgreSQL:
 
     @pytest.mark.integration
     @pytest.mark.postgres
-    def test_busqueda_por_ubicacion_postgis(
-        self, client_postgres, seed_postgres_data
-    ):
+    def test_busqueda_por_ubicacion_postgis(self, client_postgres, seed_postgres_data):
         """
         Test de búsqueda geográfica con PostGIS
         Verifica que los joins espaciales funcionen
         """
         payload = {"provincia": "Buenos Aires"}
 
-        response = client_postgres.post(
-            "/busqueda/profesionales", json=payload
-        )
+        response = client_postgres.post("/busqueda/profesionales", json=payload)
 
         assert response.status_code == 200
 
@@ -207,9 +197,7 @@ class TestIntegracionPostgreSQL:
             "departamento": "CABA",
         }
 
-        response = client_postgres.post(
-            "/busqueda/profesionales", json=payload
-        )
+        response = client_postgres.post("/busqueda/profesionales", json=payload)
 
         assert response.status_code == 200
 

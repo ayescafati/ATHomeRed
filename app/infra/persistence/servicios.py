@@ -21,9 +21,7 @@ class EspecialidadORM(Base):
     id_especialidad: Mapped[int] = mapped_column(
         Integer, primary_key=True, autoincrement=True
     )
-    nombre: Mapped[str] = mapped_column(
-        Varchar(80), nullable=False, unique=True
-    )
+    nombre: Mapped[str] = mapped_column(Varchar(80), nullable=False, unique=True)
     descripcion: Mapped[str] = mapped_column(Text, nullable=False)
     tarifa: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
 
@@ -46,9 +44,7 @@ profesional_especialidad = Table(
     Column(
         "especialidad_id",
         Integer,
-        ForeignKey(
-            f"{SCHEMA}.especialidad.id_especialidad", ondelete="CASCADE"
-        ),
+        ForeignKey(f"{SCHEMA}.especialidad.id_especialidad", ondelete="CASCADE"),
         primary_key=True,
     ),
     schema=SCHEMA,

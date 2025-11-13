@@ -80,9 +80,7 @@ class DireccionRepository:
         if departamento:
             return departamento
 
-        departamento = DepartamentoORM(
-            nombre=nombre, provincia_id=provincia.id
-        )
+        departamento = DepartamentoORM(nombre=nombre, provincia_id=provincia.id)
         self.session.add(departamento)
         self.session.flush()
 
@@ -176,11 +174,7 @@ class DireccionRepository:
 
     def obtener_por_id(self, id: UUID) -> Optional[DireccionORM]:
         """Obtiene una dirección por su ID"""
-        return (
-            self.session.query(DireccionORM)
-            .filter(DireccionORM.id == id)
-            .first()
-        )
+        return self.session.query(DireccionORM).filter(DireccionORM.id == id).first()
 
     def buscar_direccion(
         self,
@@ -212,15 +206,9 @@ class DireccionRepository:
 
     def listar_provincias(self) -> List[ProvinciaORM]:
         """Lista todas las provincias disponibles"""
-        return (
-            self.session.query(ProvinciaORM)
-            .order_by(ProvinciaORM.nombre)
-            .all()
-        )
+        return self.session.query(ProvinciaORM).order_by(ProvinciaORM.nombre).all()
 
-    def listar_departamentos(
-        self, provincia_id: UUID
-    ) -> List[DepartamentoORM]:
+    def listar_departamentos(self, provincia_id: UUID) -> List[DepartamentoORM]:
         """Lista todos los departamentos de una provincia"""
         return (
             self.session.query(DepartamentoORM)
@@ -238,9 +226,7 @@ class DireccionRepository:
             .all()
         )
 
-    def listar_direcciones_por_barrio(
-        self, barrio_id: UUID
-    ) -> List[DireccionORM]:
+    def listar_direcciones_por_barrio(self, barrio_id: UUID) -> List[DireccionORM]:
         """Lista todas las direcciones de un barrio"""
         return (
             self.session.query(DireccionORM)
@@ -272,9 +258,7 @@ class DireccionRepository:
         if provincia:
             query = query.filter(ProvinciaORM.nombre.ilike(f"%{provincia}%"))
         if departamento:
-            query = query.filter(
-                DepartamentoORM.nombre.ilike(f"%{departamento}%")
-            )
+            query = query.filter(DepartamentoORM.nombre.ilike(f"%{departamento}%"))
         if barrio:
             query = query.filter(BarrioORM.nombre.ilike(f"%{barrio}%"))
         if calle:
@@ -290,9 +274,7 @@ class DireccionRepository:
 
     def obtener_jerarquia_completa(
         self, direccion_id: UUID
-    ) -> Optional[
-        Tuple[ProvinciaORM, DepartamentoORM, BarrioORM, DireccionORM]
-    ]:
+    ) -> Optional[Tuple[ProvinciaORM, DepartamentoORM, BarrioORM, DireccionORM]]:
         """
         Obtiene la jerarquía completa de una dirección.
 

@@ -3,17 +3,10 @@ Test de integración: Verificar que API y Domain funcionan juntos
 Los tests verifican que las capas se integran sin errores de import/estructura.
 """
 
-import pytest
-from unittest.mock import MagicMock
 from datetime import date, time
 
-from app.api.routers.busqueda import FiltroBusqueda
 from app.domain.entities.usuarios import Profesional
 from app.api.routers import busqueda
-from app.domain.strategies.buscador import Buscador
-from app.domain.strategies.estrategia import BusquedaPorZona
-from app.domain.entities.catalogo import FiltroBusqueda
-from app.domain.entities.usuarios import Profesional
 from app.domain.value_objects.objetos_valor import (
     Ubicacion,
     Disponibilidad,

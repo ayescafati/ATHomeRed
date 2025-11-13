@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import List, Callable, Dict, Any
+from typing import List, Callable, Dict
 from logging import getLogger
 
 logger = getLogger(__name__)
@@ -183,9 +183,7 @@ class EventBus:
                 try:
                     handler(evt)
                 except Exception as e:
-                    logger.error(
-                        f"Error procesando evento {tipo_evento}: {str(e)}"
-                    )
+                    logger.error(f"Error procesando evento {tipo_evento}: {str(e)}")
 
     def suscribir_observer(self, tipo_evento: str, observer: Observer) -> None:
         """Suscribir Observer tradicional a un tipo de evento"""

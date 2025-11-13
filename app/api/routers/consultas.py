@@ -36,9 +36,7 @@ from app.domain.observers.observadores import EventBus, NotificadorEmail
 router = APIRouter()
 
 
-@router.post(
-    "/", response_model=ConsultaResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/", response_model=ConsultaResponse, status_code=status.HTTP_201_CREATED)
 def crear_consulta(
     data: ConsultaCreate,
     repo: ConsultaRepository = Depends(get_consulta_repository),
@@ -80,9 +78,7 @@ def crear_consulta(
             )
 
         # POLICY 3: Validar que el solicitante que crea la cita es el dueño del paciente
-        policies.validar_solicitante_es_dueno(
-            db, data.paciente_id, data.solicitante_id
-        )
+        policies.validar_solicitante_es_dueno(db, data.paciente_id, data.solicitante_id)
 
         # POLICY 4: Validar que el solicitante está activo
         policies.validar_usuario_activo(db, data.solicitante_id)
@@ -111,9 +107,7 @@ def crear_consulta(
         )
 
         for c in consultas_existentes:
-            if (data.hora_inicio < c.hora_fin) and (
-                data.hora_fin > c.hora_inicio
-            ):
+            if (data.hora_inicio < c.hora_fin) and (data.hora_fin > c.hora_inicio):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="El profesional no está disponible en el horario seleccionado",
@@ -162,9 +156,7 @@ def crear_consulta(
         return cita_creada
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
@@ -193,9 +185,7 @@ def obtener_consulta(
     return consulta
 
 
-@router.get(
-    "/profesional/{profesional_id}", response_model=List[ConsultaResponse]
-)
+@router.get("/profesional/{profesional_id}", response_model=List[ConsultaResponse])
 def listar_consultas_profesional(
     profesional_id: UUID,
     desde: date = None,
@@ -284,9 +274,7 @@ def actualizar_consulta(
         return consulta_actualizada
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/{consulta_id}/confirmar", response_model=ConsultaResponse)
@@ -294,22 +282,22 @@ def confirmar_consulta(
     consulta_id: UUID,
     repo: ConsultaRepository = Depends(get_consulta_repository),
     event_bus: EventBus = Depends(get_event_bus),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Confirma una consulta pendiente.
-    
+
     **Requiere autenticación**: Paciente o Profesional pueden confirmar.
-    
+
     - **Paciente**: Puede confirmar si es el dueño de la cita
     - **Profesional**: Puede confirmar si es el asignado a la cita
-    
+
     Cuando se confirma:
     1. Valida que la cita le pertenezca al usuario autenticado
     2. Adjunta el NotificadorEmail (Observer) para enviar notificaciones
     3. Cambia el estado a CONFIRMADA
     4. Publica evento CitaConfirmada con el ID y rol del confirmante
-    
+
     El Observer enviará automáticamente emails a ambas partes.
     """
     consulta = repo.obtener_por_id(consulta_id)
@@ -322,7 +310,7 @@ def confirmar_consulta(
 
     es_paciente = consulta.paciente_id == current_user.id
     es_profesional = consulta.profesional_id == current_user.id
-    
+
     if not (es_paciente or es_profesional):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -332,26 +320,21 @@ def confirmar_consulta(
     try:
         notificador = NotificadorEmail()
         consulta.attach(notificador)
-        
+
         rol = "paciente" if es_paciente else "profesional"
         confirmado_por = f"{rol}:{current_user.id}"
-        
+
         consulta.confirmar(confirmado_por=confirmado_por)
-        
+
         consulta_actualizada = repo.actualizar(consulta)
 
-        evento = CitaConfirmada(
-            cita_id=consulta_id,
-            confirmado_por=confirmado_por
-        )
+        evento = CitaConfirmada(cita_id=consulta_id, confirmado_por=confirmado_por)
         event_bus.publicar(evento)
 
         return consulta_actualizada
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.delete("/{consulta_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -360,16 +343,16 @@ def cancelar_consulta(
     motivo: str = None,
     repo: ConsultaRepository = Depends(get_consulta_repository),
     event_bus: EventBus = Depends(get_event_bus),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Cancela una consulta.
-    
+
     **Requiere autenticación**: Paciente o Profesional pueden cancelar.
-    
+
     - **Paciente**: Puede cancelar si es el dueño de la cita
     - **Profesional**: Puede cancelar si es el asignado a la cita
-    
+
     El Observer enviará notificaciones automáticas a ambas partes.
     """
     consulta = repo.obtener_por_id(consulta_id)
@@ -382,7 +365,7 @@ def cancelar_consulta(
 
     es_paciente = consulta.paciente_id == current_user.id
     es_profesional = consulta.profesional_id == current_user.id
-    
+
     if not (es_paciente or es_profesional):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -392,26 +375,22 @@ def cancelar_consulta(
     try:
         notificador = NotificadorEmail()
         consulta.attach(notificador)
-        
+
         rol = "paciente" if es_paciente else "profesional"
         cancelado_por = f"{rol}:{current_user.id}"
-        
+
         consulta.cancelar(motivo=motivo, cancelado_por=cancelado_por)
         repo.actualizar(consulta)
 
         evento = CitaCancelada(
-            cita_id=consulta_id, 
-            motivo=motivo,
-            cancelado_por=cancelado_por
+            cita_id=consulta_id, motivo=motivo, cancelado_por=cancelado_por
         )
         event_bus.publicar(evento)
 
         return None
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/{consulta_id}/completar", response_model=ConsultaResponse)
@@ -420,13 +399,13 @@ def completar_consulta(
     notas_finales: str = None,
     repo: ConsultaRepository = Depends(get_consulta_repository),
     event_bus: EventBus = Depends(get_event_bus),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Marca una consulta confirmada como completada.
-    
+
     **Requiere autenticación**: Solo el **Profesional** puede completar.
-    
+
     El profesional completa la cita después de brindar el servicio.
     El Observer enviará notificaciones al paciente confirmando la finalización.
     """
@@ -447,22 +426,17 @@ def completar_consulta(
     try:
         notificador = NotificadorEmail()
         consulta.attach(notificador)
-        
+
         consulta.completar(notas_finales=notas_finales)
         consulta_actualizada = repo.actualizar(consulta)
 
-        evento = CitaCompletada(
-            cita_id=consulta_id, 
-            notas=notas_finales
-        )
+        evento = CitaCompletada(cita_id=consulta_id, notas=notas_finales)
         event_bus.publicar(evento)
 
         return consulta_actualizada
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/{consulta_id}/reprogramar", response_model=ConsultaResponse)
@@ -471,16 +445,16 @@ def reprogramar_consulta(
     data: ConsultaUpdate,
     repo: ConsultaRepository = Depends(get_consulta_repository),
     event_bus: EventBus = Depends(get_event_bus),
-    current_user = Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     """
     Reprograma una consulta (cambia fecha y horarios).
-    
+
     **Requiere autenticación**: Paciente o Profesional pueden reprogramar.
-    
+
     - **Paciente**: Puede reprogramar si es el dueño de la cita
     - **Profesional**: Puede reprogramar si es el asignado a la cita
-    
+
     El Observer enviará notificaciones a ambas partes con el nuevo horario.
     """
     consulta = repo.obtener_por_id(consulta_id)
@@ -499,7 +473,7 @@ def reprogramar_consulta(
 
     es_paciente = consulta.paciente_id == current_user.id
     es_profesional = consulta.profesional_id == current_user.id
-    
+
     if not (es_paciente or es_profesional):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -507,9 +481,7 @@ def reprogramar_consulta(
         )
 
     try:
-        fecha_anterior = (
-            f"{consulta.fecha} {consulta.hora_inicio}-{consulta.hora_fin}"
-        )
+        fecha_anterior = f"{consulta.fecha} {consulta.hora_inicio}-{consulta.hora_fin}"
 
         notificador = NotificadorEmail()
         consulta.attach(notificador)
@@ -532,6 +504,4 @@ def reprogramar_consulta(
         return consulta_actualizada
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

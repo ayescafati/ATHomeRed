@@ -10,13 +10,14 @@ from alembic import context
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from app.infra.persistence.base import Base #app\infra\persistence\base.py
+from app.infra.persistence.base import Base  # noqa: E402
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
+
 
 def _get_url():
     # Prioridad a env var del runner (.env.test)
@@ -25,6 +26,7 @@ def _get_url():
         return url
     # Si no, lo que diga el INI (alembic_test.ini)
     return config.get_main_option("sqlalchemy.url")
+
 
 def run_migrations_offline():
     url = _get_url()
@@ -38,6 +40,7 @@ def run_migrations_offline():
     )
     with context.begin_transaction():
         context.run_migrations()
+
 
 def run_migrations_online():
     cfg = config.get_section(config.config_ini_section) or {}

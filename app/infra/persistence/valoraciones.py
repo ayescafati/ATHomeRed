@@ -30,9 +30,7 @@ class ValoracionORM(Base):
         CheckConstraint(
             "puntuacion BETWEEN 1 AND 5", name="ck_valoracion_puntuacion_1_5"
         ),
-        Index(
-            "ix_valoracion_profesional_fecha", "profesional_id", "creado_en"
-        ),
+        Index("ix_valoracion_profesional_fecha", "profesional_id", "creado_en"),
         {"schema": SCHEMA},
     )
 

@@ -16,9 +16,7 @@ class IntegrityPolicies:
     """Policies de integridad para validar reglas de negocio"""
 
     @staticmethod
-    def validar_usuario_activo(
-        session: Session, usuario_id: UUID
-    ) -> UsuarioORM:
+    def validar_usuario_activo(session: Session, usuario_id: UUID) -> UsuarioORM:
         """
         Policy 1: Solo usuarios ACTIVOS pueden operar en el sistema
 
@@ -111,9 +109,7 @@ class IntegrityPolicies:
         return paciente
 
     @staticmethod
-    def validar_paciente_existe(
-        session: Session, paciente_id: UUID
-    ) -> PacienteORM:
+    def validar_paciente_existe(session: Session, paciente_id: UUID) -> PacienteORM:
         """Valida que un paciente existe (sin policy de permisos)"""
         paciente = session.execute(
             select(PacienteORM).where(PacienteORM.id == paciente_id)

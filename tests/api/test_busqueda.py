@@ -22,9 +22,7 @@ def client():
 
 
 @pytest.fixture
-def mock_repos(
-    profesional_enfermeria, especialidad_enfermeria, ubicacion_buenos_aires
-):
+def mock_repos(profesional_enfermeria, especialidad_enfermeria, ubicacion_buenos_aires):
     """Fixture que configura mocks de repositorios (ATHomeRed)"""
     mock_prof_repo = Mock()
     mock_catalogo_repo = Mock()
@@ -38,28 +36,18 @@ def mock_repos(
     provincia_mock.id = uuid4()
     provincia_mock.nombre = "Buenos Aires"
 
-    mock_catalogo_repo.obtener_especialidad_por_nombre.return_value = (
-        especialidad_mock
-    )
-    mock_catalogo_repo.obtener_especialidad_por_id.return_value = (
-        especialidad_mock
-    )
+    mock_catalogo_repo.obtener_especialidad_por_nombre.return_value = especialidad_mock
+    mock_catalogo_repo.obtener_especialidad_por_id.return_value = especialidad_mock
     mock_catalogo_repo.listar_especialidades.return_value = [especialidad_mock]
 
-    mock_prof_repo.buscar_por_especialidad.return_value = [
-        profesional_enfermeria
-    ]
+    mock_prof_repo.buscar_por_especialidad.return_value = [profesional_enfermeria]
     mock_prof_repo.buscar_por_ubicacion.return_value = [profesional_enfermeria]
     mock_prof_repo.buscar_combinado.return_value = [profesional_enfermeria]
 
     mock_dir_repo.listar_provincias.return_value = [provincia_mock]
 
-    app.dependency_overrides[get_profesional_repository] = (
-        lambda: mock_prof_repo
-    )
-    app.dependency_overrides[get_catalogo_repository] = (
-        lambda: mock_catalogo_repo
-    )
+    app.dependency_overrides[get_profesional_repository] = lambda: mock_prof_repo
+    app.dependency_overrides[get_catalogo_repository] = lambda: mock_catalogo_repo
     app.dependency_overrides[get_direccion_repository] = lambda: mock_dir_repo
 
     yield {
@@ -98,9 +86,7 @@ class TestBusquedaProfesionalesEndpoint:
 
     def test_busqueda_especialidad_no_existe(self, client, mock_repos):
         """Debe retornar 404 si la especialidad no existe"""
-        mock_repos["catalogo"].obtener_especialidad_por_nombre.return_value = (
-            None
-        )
+        mock_repos["catalogo"].obtener_especialidad_por_nombre.return_value = None
 
         payload = {"nombre_especialidad": "EspecialidadQueNoExiste"}
 
@@ -226,8 +212,8 @@ class TestBusquedaErrores:
 
     def test_error_interno_manejado(self, client, mock_repos):
         """Errores internos deben retornar 500"""
-        mock_repos["profesional"].buscar_por_especialidad.side_effect = (
-            Exception("Error BD")
+        mock_repos["profesional"].buscar_por_especialidad.side_effect = Exception(
+            "Error BD"
         )
 
         payload = {"nombre_especialidad": "Cardiología"}
@@ -239,8 +225,8 @@ class TestBusquedaErrores:
 
     def test_valor_error_retorna_400(self, client, mock_repos):
         """ValueError debe retornar 400"""
-        mock_repos["profesional"].buscar_por_especialidad.side_effect = (
-            ValueError("Filtro inválido")
+        mock_repos["profesional"].buscar_por_especialidad.side_effect = ValueError(
+            "Filtro inválido"
         )
 
         payload = {"nombre_especialidad": "Cardiología"}

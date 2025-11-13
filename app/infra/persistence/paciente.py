@@ -62,9 +62,7 @@ class PacienteORM(Base):
         "SolicitanteORM", back_populates="paciente", uselist=False
     )
 
-    relacion: Mapped["RelacionSolicitanteORM"] = relationship(
-        "RelacionSolicitanteORM"
-    )
+    relacion: Mapped["RelacionSolicitanteORM"] = relationship("RelacionSolicitanteORM")
 
     consultas: Mapped[List["ConsultaORM"]] = relationship(
         "ConsultaORM",

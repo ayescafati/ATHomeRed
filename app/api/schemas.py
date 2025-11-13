@@ -112,7 +112,7 @@ class PacienteCreate(BaseModel):
     )
     notas: Optional[str] = None
     ubicacion: UbicacionSchema
-    solicitante_id: UUID  
+    solicitante_id: UUID
 
 
 class PacienteResponse(BaseModel):
@@ -150,7 +150,7 @@ class ConsultaCreate(BaseModel):
 
     profesional_id: UUID
     paciente_id: UUID
-    solicitante_id: UUID  
+    solicitante_id: UUID
     fecha: date
     hora_inicio: time
     hora_fin: time
@@ -167,7 +167,7 @@ class ConsultaResponse(BaseModel):
     fecha: date
     hora_inicio: time
     hora_fin: time
-    estado: str 
+    estado: str
     ubicacion: UbicacionSchema
     motivo: Optional[str]
     notas: Optional[str]
@@ -214,9 +214,7 @@ class ValoracionCreate(BaseModel):
 
     profesional_id: UUID
     paciente_id: UUID
-    puntuacion: int = Field(
-        ge=1, le=5, description="Puntuación de 1 a 5 estrellas"
-    )
+    puntuacion: int = Field(ge=1, le=5, description="Puntuación de 1 a 5 estrellas")
     comentario: Optional[str] = Field(None, max_length=500)
 
 

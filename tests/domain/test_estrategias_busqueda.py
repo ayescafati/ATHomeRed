@@ -3,7 +3,7 @@ Tests unitarios para las estrategias de búsqueda
 """
 
 import pytest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 
 from app.domain.strategies.estrategia import (
     EstrategiaBusqueda,
@@ -24,9 +24,7 @@ class TestBusquedaPorZona:
 
         filtro = FiltroBusqueda(provincia="Buenos Aires")
 
-        resultado = estrategia.buscar(
-            mock_profesional_repository_con_datos, filtro
-        )
+        resultado = estrategia.buscar(mock_profesional_repository_con_datos, filtro)
 
         assert len(resultado) > 0
         mock_profesional_repository_con_datos.buscar_por_ubicacion.assert_called_once()
@@ -43,9 +41,7 @@ class TestBusquedaPorZona:
             provincia="Buenos Aires", departamento="CABA", barrio="Flores"
         )
 
-        resultado = estrategia.buscar(
-            mock_profesional_repository_con_datos, filtro
-        )
+        resultado = estrategia.buscar(mock_profesional_repository_con_datos, filtro)
 
         assert isinstance(resultado, list)
         mock_profesional_repository_con_datos.buscar_por_ubicacion.assert_called_once_with(
@@ -56,9 +52,7 @@ class TestBusquedaPorZona:
 class TestBusquedaPorEspecialidad:
     """Tests para la estrategia de búsqueda por especialidad"""
 
-    def test_busca_por_nombre_especialidad(
-        self, mock_profesional_repository_con_datos
-    ):
+    def test_busca_por_nombre_especialidad(self, mock_profesional_repository_con_datos):
         """Búsqueda por nombre de especialidad"""
         estrategia = BusquedaPorEspecialidad()
 
@@ -66,18 +60,14 @@ class TestBusquedaPorEspecialidad:
 
         filtro = FiltroBusqueda(nombre_especialidad="Cardiología")
 
-        resultado = estrategia.buscar(
-            mock_profesional_repository_con_datos, filtro
-        )
+        resultado = estrategia.buscar(mock_profesional_repository_con_datos, filtro)
 
         assert isinstance(resultado, list)
         mock_profesional_repository_con_datos.buscar_por_especialidad.assert_called_once_with(
             especialidad_id=None, especialidad_nombre="Cardiología"
         )
 
-    def test_busca_por_id_especialidad(
-        self, mock_profesional_repository_con_datos
-    ):
+    def test_busca_por_id_especialidad(self, mock_profesional_repository_con_datos):
         """Búsqueda por ID de especialidad"""
         estrategia = BusquedaPorEspecialidad()
 
@@ -85,9 +75,7 @@ class TestBusquedaPorEspecialidad:
 
         filtro = FiltroBusqueda(id_especialidad=1)
 
-        resultado = estrategia.buscar(
-            mock_profesional_repository_con_datos, filtro
-        )
+        resultado = estrategia.buscar(mock_profesional_repository_con_datos, filtro)
 
         assert isinstance(resultado, list)
 
@@ -107,16 +95,12 @@ class TestBusquedaCombinada:
             nombre_especialidad="Cardiología", provincia="Buenos Aires"
         )
 
-        resultado = estrategia.buscar(
-            mock_profesional_repository_con_datos, filtro
-        )
+        resultado = estrategia.buscar(mock_profesional_repository_con_datos, filtro)
 
         assert isinstance(resultado, list)
         mock_profesional_repository_con_datos.buscar_combinado.assert_called_once()
 
-    def test_busca_combinada_completa(
-        self, mock_profesional_repository_con_datos
-    ):
+    def test_busca_combinada_completa(self, mock_profesional_repository_con_datos):
         """Búsqueda combinada con todos los parámetros"""
         estrategia = BusquedaCombinada()
 
@@ -129,9 +113,7 @@ class TestBusquedaCombinada:
             barrio="Flores",
         )
 
-        resultado = estrategia.buscar(
-            mock_profesional_repository_con_datos, filtro
-        )
+        resultado = estrategia.buscar(mock_profesional_repository_con_datos, filtro)
 
         assert isinstance(resultado, list)
 

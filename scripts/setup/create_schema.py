@@ -4,15 +4,14 @@ Ejecutar ANTES de la primera migración de Alembic.
 """
 
 import sys
-import os
 from pathlib import Path
 from sqlalchemy import text
 
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
-from app.infra.persistence.database import ENGINE
-from app.infra.persistence.base import SCHEMA
+from app.infra.persistence.database import ENGINE  # noqa: E402
+from app.infra.persistence.base import SCHEMA  # noqa: E402
 
 
 def crear_esquema():

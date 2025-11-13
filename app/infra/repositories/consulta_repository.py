@@ -114,11 +114,7 @@ class ConsultaRepository:
         Returns:
             Cita o None si no existe
         """
-        orm = (
-            self.session.query(ConsultaORM)
-            .filter(ConsultaORM.id == id)
-            .first()
-        )
+        orm = self.session.query(ConsultaORM).filter(ConsultaORM.id == id).first()
 
         return self._to_domain(orm) if orm else None
 
@@ -186,9 +182,7 @@ class ConsultaRepository:
                 EstadoConsultaORM.codigo.notin_(["cancelada", "completada"])
             )
 
-        query = query.order_by(
-            ConsultaORM.fecha.desc(), ConsultaORM.hora_inicio
-        )
+        query = query.order_by(ConsultaORM.fecha.desc(), ConsultaORM.hora_inicio)
 
         return [self._to_domain(orm) for orm in query.all()]
 
@@ -222,11 +216,7 @@ class ConsultaRepository:
         Returns:
             Cita actualizada o None si no existe
         """
-        orm = (
-            self.session.query(ConsultaORM)
-            .filter(ConsultaORM.id == cita.id)
-            .first()
-        )
+        orm = self.session.query(ConsultaORM).filter(ConsultaORM.id == cita.id).first()
 
         if not orm:
             return None
@@ -247,11 +237,7 @@ class ConsultaRepository:
         Returns:
             True si se eliminó, False si no existía
         """
-        orm = (
-            self.session.query(ConsultaORM)
-            .filter(ConsultaORM.id == id)
-            .first()
-        )
+        orm = self.session.query(ConsultaORM).filter(ConsultaORM.id == id).first()
 
         if not orm:
             return False
@@ -287,10 +273,7 @@ class ConsultaRepository:
         )
 
         for cita_orm in citas_existentes:
-            if (
-                hora_inicio < cita_orm.hora_fin
-                and hora_fin > cita_orm.hora_inicio
-            ):
+            if hora_inicio < cita_orm.hora_fin and hora_fin > cita_orm.hora_inicio:
                 return False
 
         return True

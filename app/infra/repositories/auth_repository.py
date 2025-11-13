@@ -82,7 +82,7 @@ class AuthRepository:
             .filter(
                 and_(
                     RefreshTokenORM.token == token,
-                    RefreshTokenORM.revocado == False,
+                    not RefreshTokenORM.revocado,
                     RefreshTokenORM.expira_en > datetime.now(timezone.utc),
                 )
             )
@@ -132,7 +132,7 @@ class AuthRepository:
             .filter(
                 and_(
                     RefreshTokenORM.usuario_id == usuario_id,
-                    RefreshTokenORM.revocado == False,
+                    not RefreshTokenORM.revocado,
                 )
             )
             .update({"revocado": True})
@@ -197,9 +197,7 @@ class AuthRepository:
 
         return auditoria
 
-    def obtener_intentos_fallidos_recientes(
-        self, email: str, minutos: int = 15
-    ) -> int:
+    def obtener_intentos_fallidos_recientes(self, email: str, minutos: int = 15) -> int:
         """
         Cuenta intentos de login fallidos en los últimos X minutos.
 
@@ -219,7 +217,7 @@ class AuthRepository:
             .filter(
                 and_(
                     AuditoriaLoginORM.email == email,
-                    AuditoriaLoginORM.exitoso == False,
+                    not AuditoriaLoginORM.exitoso,
                     AuditoriaLoginORM.fecha >= tiempo_limite,
                 )
             )

@@ -35,7 +35,7 @@ def test_auth_completo():
 
     try:
         auth_service = AuthService(db)
-        auth_repo = AuthRepository(db)
+        AuthRepository(db)
 
         email_test = f"test_auth_{datetime.utcnow().timestamp()}@example.com"
 
@@ -65,7 +65,7 @@ def test_auth_completo():
                 ip_address="127.0.0.1",
                 user_agent="Python Test Script",
             )
-            print(f"   Login exitoso")
+            print("   Login exitoso")
             print(f"   Access Token: {tokens['access_token'][:30]}...")
             print(f"   Refresh Token: {tokens['refresh_token'][:30]}...")
             print(f"   Token Type: {tokens['token_type']}")
@@ -80,7 +80,7 @@ def test_auth_completo():
         print("-" * 40)
         try:
             payload = auth_service.validar_access_token(access_token)
-            print(f"   Token válido")
+            print("   Token válido")
             print(f"   Usuario ID: {payload['sub']}")
             print(f"   Email: {payload['email']}")
             print(f"   Roles: {payload['roles']}")
@@ -91,9 +91,9 @@ def test_auth_completo():
         print("-" * 40)
         try:
             new_tokens = auth_service.refresh_access_token(refresh_token)
-            print(f"   Nuevo access token generado")
+            print("   Nuevo access token generado")
             print(f"   New Access Token: {new_tokens['access_token'][:30]}...")
-            print(f"   (El refresh token se mantiene igual)")
+            print("   (El refresh token se mantiene igual)")
         except Exception as e:
             print(f"   Error en refresh: {e}")
 
@@ -124,9 +124,9 @@ def test_auth_completo():
         try:
             resultado = auth_service.logout(refresh_token)
             if resultado:
-                print(f"Sesión cerrada exitosamente")
+                print("Sesión cerrada exitosamente")
             else:
-                print(f"Token no encontrado (puede estar ya revocado)")
+                print("Token no encontrado (puede estar ya revocado)")
         except Exception as e:
             print(f"Error en logout: {e}")
 
@@ -134,7 +134,7 @@ def test_auth_completo():
         print("-" * 40)
         try:
             auth_service.refresh_access_token(refresh_token)
-            print(f"ERROR: El refresh debería haber fallado")
+            print("ERROR: El refresh debería haber fallado")
         except ValueError as ve:
             print(f"Correctamente bloqueado: {ve}")
         except Exception as e:
@@ -146,9 +146,7 @@ def test_auth_completo():
 
         total_tokens = db.query(RefreshTokenORM).count()
         tokens_revocados = (
-            db.query(RefreshTokenORM)
-            .filter(RefreshTokenORM.revocado == True)
-            .count()
+            db.query(RefreshTokenORM).filter(RefreshTokenORM.revocado).count()
         )
 
         print(f"   Total refresh tokens: {total_tokens}")

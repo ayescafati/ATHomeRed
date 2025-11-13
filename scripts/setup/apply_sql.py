@@ -16,7 +16,7 @@ if str(ROOT) not in sys.path:
 
 load_dotenv()
 
-from app.infra.persistence.database import ENGINE
+from app.infra.persistence.database import ENGINE  # noqa: E402
 
 SQL_FILE = ROOT / "alembic.sql"
 
@@ -58,14 +58,10 @@ def main() -> int:
         except UnicodeDecodeError:
             continue
     else:
-        print(
-            "[apply_sql] Could not decode alembic.sql with common encodings."
-        )
+        print("[apply_sql] Could not decode alembic.sql with common encodings.")
         return 3
     stmts = list(iter_statements(sql_text))
-    print(
-        f"[apply_sql] Executing {len(stmts)} statements from {SQL_FILE.name}..."
-    )
+    print(f"[apply_sql] Executing {len(stmts)} statements from {SQL_FILE.name}...")
 
     with ENGINE.begin() as conn:
         for i, stmt in enumerate(stmts, 1):

@@ -28,6 +28,5 @@ class DisponibilidadHorariaStrategy(AsignacionStrategy):
 class MatriculaProvinciaStrategy(AsignacionStrategy):
     def validar(self, cita: "Consulta", profesional) -> bool:
         return any(
-            m.provincia == cita.ubicacion.provincia
-            for m in profesional.matriculas
+            m.provincia == cita.ubicacion.provincia for m in profesional.matriculas
         )

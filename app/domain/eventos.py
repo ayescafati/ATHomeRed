@@ -53,9 +53,7 @@ class CitaConfirmada(Event):
 class CitaCancelada(Event):
     """Se canceló una cita"""
 
-    def __init__(
-        self, cita_id: UUID, motivo: str = None, cancelado_por: str = None
-    ):
+    def __init__(self, cita_id: UUID, motivo: str = None, cancelado_por: str = None):
         super().__init__(
             tipo="cita.cancelada",
             cita_id=cita_id,
@@ -67,9 +65,7 @@ class CitaCancelada(Event):
 class CitaReprogramada(Event):
     """Se reprogramó una cita"""
 
-    def __init__(
-        self, cita_id: UUID, fecha_anterior: str, fecha_nueva: str, **kwargs
-    ):
+    def __init__(self, cita_id: UUID, fecha_anterior: str, fecha_nueva: str, **kwargs):
         super().__init__(
             tipo="cita.reprogramada",
             cita_id=cita_id,

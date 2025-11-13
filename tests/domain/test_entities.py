@@ -2,8 +2,7 @@
 Tests unitarios para las entities del domain
 """
 
-import pytest
-from datetime import date, time
+from datetime import date
 from uuid import uuid4
 
 from app.domain.entities.usuarios import (
@@ -14,10 +13,7 @@ from app.domain.entities.usuarios import (
 )
 from app.domain.value_objects.objetos_valor import (
     Ubicacion,
-    Disponibilidad,
-    Matricula,
 )
-from app.domain.entities.catalogo import Especialidad
 
 
 class TestUbicacion:
@@ -67,9 +63,7 @@ class TestEspecialidad:
     ):
         """Especialidades diferentes tienen IDs distintos"""
         assert especialidad_enfermeria.id != especialidad_acompanante.id
-        assert (
-            especialidad_enfermeria.nombre != especialidad_acompanante.nombre
-        )
+        assert especialidad_enfermeria.nombre != especialidad_acompanante.nombre
 
 
 class TestUsuario:
@@ -131,18 +125,10 @@ class TestProfesional:
         """Agregar disponibilidad a un profesional"""
         cantidad_inicial = len(profesional_enfermeria.disponibilidades)
 
-        profesional_enfermeria.agregar_disponibilidad(
-            disponibilidad_miercoles_tarde
-        )
+        profesional_enfermeria.agregar_disponibilidad(disponibilidad_miercoles_tarde)
 
-        assert (
-            len(profesional_enfermeria.disponibilidades)
-            == cantidad_inicial + 1
-        )
-        assert (
-            disponibilidad_miercoles_tarde
-            in profesional_enfermeria.disponibilidades
-        )
+        assert len(profesional_enfermeria.disponibilidades) == cantidad_inicial + 1
+        assert disponibilidad_miercoles_tarde in profesional_enfermeria.disponibilidades
 
     def test_profesional_hereda_de_usuario(self, profesional_enfermeria):
         """Profesional tiene métodos de Usuario"""
@@ -301,17 +287,13 @@ class TestIntegracionEntities:
         self, profesional_enfermeria, disponibilidad_miercoles_tarde
     ):
         """Flujo completo: profesional con especialidades y disponibilidades"""
-        profesional_enfermeria.agregar_disponibilidad(
-            disponibilidad_miercoles_tarde
-        )
+        profesional_enfermeria.agregar_disponibilidad(disponibilidad_miercoles_tarde)
 
         assert len(profesional_enfermeria.especialidades) >= 1
         assert len(profesional_enfermeria.disponibilidades) == 2
         assert len(profesional_enfermeria.matriculas) >= 1
 
-    def test_diferencia_usuario_vs_paciente(
-        self, profesional_enfermeria, paciente
-    ):
+    def test_diferencia_usuario_vs_paciente(self, profesional_enfermeria, paciente):
         """Los profesionales son usuarios, los pacientes no"""
         assert isinstance(profesional_enfermeria, Usuario)
         assert not isinstance(paciente, Usuario)

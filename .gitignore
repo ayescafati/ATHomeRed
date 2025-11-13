@@ -1,84 +1,221 @@
+# ============================================================
 # Python
+# ============================================================
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# C extensions
 *.so
 
-# Virtual environments
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ============================================================
+# Virtual Environments
+# ============================================================
+
 venv/
 env/
 ENV/
 .venv/
+.env.bak
+.venv.bak
 
-# Environment Variables
+# ============================================================
+# Environment Variables (SENSIBLES - NO SUBIR)
+# ============================================================
+
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
 
+# ============================================================
 # Databases
-# SQLite databases (locales)
+# ============================================================
+
+# SQLite (desarrollo local)
 *.db
 *.sqlite
 *.sqlite3
+*.db-journal
 
-# PostgreSQL dumps
-*.sql
+# PostgreSQL dumps (backups locales)
+*.sql.gz
+*.dump
 
-# IDEs
-# VS Code
+# NO ignorar scripts SQL de inicialización
+# (si necesitas scripts SQL, quita el comentario de abajo)
+# !scripts/**/*.sql
+# !alembic/**/*.sql
+
+# ============================================================
+# IDEs y Editores
+# ============================================================
+
+# Visual Studio Code
 .vscode/
 *.code-workspace
+.history/
 
-# PyCharm
+# PyCharm / IntelliJ IDEA
 .idea/
-
-# JetBrains
 *.iml
-.idea/
+*.iws
+out/
 
-# OS
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+.vim/
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# ============================================================
+# Sistema Operativo
+# ============================================================
+
 # Windows
 Thumbs.db
-estore.pointstore
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 *.lnk
+*.stackdump
 
 # macOS
 .DS_Store
 .AppleDouble
 .LSOverride
+._*
+.Spotlight-V100
+.Trashes
 
 # Linux
 *~
+.fuse_hidden*
+.directory
+.Trash-*
 
+# ============================================================
 # Logs
+# ============================================================
+
 *.log
 logs/
 *.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Alembic
-# NO ignorar la estructura de Alembic, pero SÍ ignorar archivos temporales
+# ============================================================
+# Testing
+# ============================================================
+
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+.pytype/
+
+# ============================================================
+# Jupyter Notebook
+# ============================================================
+
+.ipynb_checkpoints/
+*.ipynb
+
+# ============================================================
+# Alembic (Migraciones)
+# ============================================================
+
+# NO ignorar las migraciones
+# Solo ignorar cachés
 alembic/__pycache__/
 alembic/versions/__pycache__/
 
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
+# ============================================================
+# Archivos Temporales
+# ============================================================
 
-# Jupyter
-.ipynb_checkpoints/
-
-# Temporales
 *.tmp
+*.temp
 *.bak
-*.swp
-*.swo
-*~
+*.backup
+*.old
+*.orig
 
-# Build
-build/
-dist/
-*.egg-info/
-.venv
+# ============================================================
+# Archivos Específicos del Proyecto
+# ============================================================
+
+# Archivos de datos locales (no subir datos sensibles)
+/data/
+/uploads/
+
+# Archivos de configuración local
+config.local.py
+settings.local.py
+
+# ============================================================
+# NO IGNORAR (Mantener en el repo)
+# ============================================================
+
+# Scripts importantes
+!scripts/**/*.py
+!scripts/**/*.ps1
+!scripts/**/*.bat
+
+# Documentación
+!**/*.md
+!README.md
+!docs/**
+
+# Archivos de configuración ejemplo
+!.env.example
+!config.example.py
+
+# Alembic
+!alembic/
+!alembic/versions/
+!alembic.ini
+!alembic/env.py
+!alembic/script.py.mako

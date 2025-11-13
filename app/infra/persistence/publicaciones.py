@@ -35,9 +35,7 @@ class PublicacionORM(Base):
     )
     especialidad_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey(
-            f"{SCHEMA}.especialidad.id_especialidad", ondelete="RESTRICT"
-        ),
+        ForeignKey(f"{SCHEMA}.especialidad.id_especialidad", ondelete="RESTRICT"),
         nullable=False,
     )
     titulo: Mapped[str] = mapped_column(Text, nullable=False)

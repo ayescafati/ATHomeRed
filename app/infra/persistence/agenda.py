@@ -42,9 +42,7 @@ class DisponibilidadORM(Base):
         ForeignKey(f"{SCHEMA}.profesional.id", ondelete="CASCADE"),
         nullable=False,
     )
-    dias_semana_text: Mapped[str] = mapped_column(
-        "dias_semana", Text, nullable=False
-    )
+    dias_semana_text: Mapped[str] = mapped_column("dias_semana", Text, nullable=False)
     hora_inicio: Mapped[time] = mapped_column(nullable=False)
     hora_fin: Mapped[time] = mapped_column(nullable=False)
 
@@ -114,9 +112,7 @@ class ConsultaORM(Base):
         nullable=False,
     )
 
-    notas: Mapped[str] = mapped_column(
-        Text, nullable=False, server_default=text("''")
-    )
+    notas: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
 
     paciente: Mapped["PacienteORM"] = relationship(
         "PacienteORM", back_populates="consultas"
@@ -153,9 +149,7 @@ class EventoORM(Base):
 
     tipo: Mapped[str] = mapped_column(nullable=False)
 
-    datos: Mapped[Dict[str, Any]] = mapped_column(
-        JSON, nullable=False, default=dict
-    )
+    datos: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
 
     consulta: Mapped["ConsultaORM"] = relationship(
         "ConsultaORM",

@@ -58,9 +58,7 @@ class DepartamentoORM(Base):
     )
     nombre: Mapped[str] = mapped_column(Varchar(50), nullable=False)
 
-    provincia: Mapped["ProvinciaORM"] = relationship(
-        back_populates="departamentos"
-    )
+    provincia: Mapped["ProvinciaORM"] = relationship(back_populates="departamentos")
     barrios: Mapped[List["BarrioORM"]] = relationship(
         back_populates="departamento", cascade="all, delete-orphan"
     )
@@ -88,9 +86,7 @@ class BarrioORM(Base):
     )
     nombre: Mapped[str] = mapped_column(Varchar(50), nullable=False)
 
-    departamento: Mapped["DepartamentoORM"] = relationship(
-        back_populates="barrios"
-    )
+    departamento: Mapped["DepartamentoORM"] = relationship(back_populates="barrios")
     direcciones: Mapped[List["DireccionORM"]] = relationship(
         back_populates="barrio", cascade="all, delete-orphan"
     )

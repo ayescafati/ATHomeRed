@@ -21,9 +21,6 @@ from app.infra.persistence.ubicacion import (
     ProvinciaORM,
 )
 
-from app.infra.persistence.agenda import DisponibilidadORM
-from app.infra.persistence.matriculas import MatriculaORM
-
 
 from app.infra.repositories.direccion_repository import DireccionRepository
 
@@ -40,8 +37,9 @@ DIAS_NOMBRE_A_NUMERO = {
 
 def _normalizar_texto(texto: str) -> str:
     """Normaliza texto removiendo acentos y convirtiendo a minúsculas"""
-    nfkd = unicodedata.normalize('NFD', texto)
-    return ''.join([c for c in nfkd if not unicodedata.combining(c)]).lower()
+    nfkd = unicodedata.normalize("NFD", texto)
+    return "".join([c for c in nfkd if not unicodedata.combining(c)]).lower()
+
 
 class ProfesionalRepository:
     def __init__(self, session: Session):
@@ -54,15 +52,15 @@ class ProfesionalRepository:
         Soporta nombres de días en español (con o sin acentos) y números (1-7).
         """
         dia_limpio = dia.strip()
-        
+
         if dia_limpio.isdigit():
             return DiaSemana(int(dia_limpio))
-        
+
         dia_normalizado = _normalizar_texto(dia_limpio)
-        
+
         if dia_normalizado in DIAS_NOMBRE_A_NUMERO:
             return DIAS_NOMBRE_A_NUMERO[dia_normalizado]
-        
+
         raise ValueError(
             f"Día no válido: '{dia}'. Debe ser un nombre de día en español o un número entre 1 y 7."
         )
@@ -132,11 +130,7 @@ class ProfesionalRepository:
 
     def listar_activos(self) -> List[Profesional]:
         """Para Strategy de búsqueda"""
-        orms = (
-            self.session.query(ProfesionalORM)
-            .filter(ProfesionalORM.activo == True)
-            .all()
-        )
+        orms = self.session.query(ProfesionalORM).filter(ProfesionalORM.activo).all()
         return [self._to_domain(orm) for orm in orms]
 
     def listar_todos(self) -> List[Profesional]:
@@ -173,7 +167,6 @@ class ProfesionalRepository:
         """
 
         if usuario_id is None:
-
             usuario_orm = UsuarioORM(
                 nombre=profesional.nombre,
                 apellido=profesional.apellido,
@@ -205,7 +198,7 @@ class ProfesionalRepository:
 
         if profesional.matriculas:
             from datetime import timedelta
-            
+
             for mat in profesional.matriculas:
                 provincia_orm = (
                     self.session.query(ProvinciaORM)
@@ -214,15 +207,16 @@ class ProfesionalRepository:
                 )
                 if not provincia_orm:
                     raise ValueError(f"Provincia '{mat.provincia}' no encontrada")
-                
+
                 from app.infra.persistence.matriculas import MatriculaORM
-                
+
                 mat_orm = MatriculaORM(
                     profesional_id=orm.id,
                     provincia_id=provincia_orm.id,
                     nro_matricula=mat.numero,
                     vigente_desde=mat.vigente_desde,
-                    vigente_hasta=mat.vigente_hasta or (mat.vigente_desde + timedelta(days=3650)),
+                    vigente_hasta=mat.vigente_hasta
+                    or (mat.vigente_desde + timedelta(days=3650)),
                 )
                 self.session.add(mat_orm)
 
@@ -262,9 +256,7 @@ class ProfesionalRepository:
         )
 
         if not orm:
-            raise ValueError(
-                f"Profesional con id {profesional.id} no encontrado"
-            )
+            raise ValueError(f"Profesional con id {profesional.id} no encontrado")
 
         orm.usuario.nombre = profesional.nombre
         orm.usuario.apellido = profesional.apellido
@@ -279,9 +271,7 @@ class ProfesionalRepository:
             orm.direccion_id = direccion_id
         elif profesional.ubicacion:
             ubicacion_actual = (
-                self.direccion_repo._to_domain(orm.direccion)
-                if orm.direccion
-                else None
+                self.direccion_repo._to_domain(orm.direccion) if orm.direccion else None
             )
 
             if ubicacion_actual != profesional.ubicacion:
@@ -340,13 +330,11 @@ class ProfesionalRepository:
         query = (
             self.session.query(ProfesionalORM)
             .join(ProfesionalORM.especialidades)
-            .filter(ProfesionalORM.activo == True)
+            .filter(ProfesionalORM.activo)
         )
 
         if especialidad_id:
-            query = query.filter(
-                EspecialidadORM.id_especialidad == especialidad_id
-            )
+            query = query.filter(EspecialidadORM.id_especialidad == especialidad_id)
         elif especialidad_nombre:
             query = query.filter(
                 EspecialidadORM.nombre.ilike(f"%{especialidad_nombre}%")
@@ -374,15 +362,13 @@ class ProfesionalRepository:
             .join(DireccionORM.barrio)
             .join(BarrioORM.departamento)
             .join(DepartamentoORM.provincia)
-            .filter(ProfesionalORM.activo == True)
+            .filter(ProfesionalORM.activo)
         )
 
         if provincia:
             query = query.filter(ProvinciaORM.nombre.ilike(f"%{provincia}%"))
         if departamento:
-            query = query.filter(
-                DepartamentoORM.nombre.ilike(f"%{departamento}%")
-            )
+            query = query.filter(DepartamentoORM.nombre.ilike(f"%{departamento}%"))
         if barrio:
             query = query.filter(BarrioORM.nombre.ilike(f"%{barrio}%"))
 
@@ -401,9 +387,7 @@ class ProfesionalRepository:
         Busca profesionales por ubicación y/o especialidad.
         Prioriza especialidad_id sobre especialidad_nombre.
         """
-        query = self.session.query(ProfesionalORM).filter(
-            ProfesionalORM.activo == True
-        )
+        query = self.session.query(ProfesionalORM).filter(ProfesionalORM.activo)
 
         if provincia or departamento or barrio:
             query = (
@@ -414,13 +398,9 @@ class ProfesionalRepository:
             )
 
             if provincia:
-                query = query.filter(
-                    ProvinciaORM.nombre.ilike(f"%{provincia}%")
-                )
+                query = query.filter(ProvinciaORM.nombre.ilike(f"%{provincia}%"))
             if departamento:
-                query = query.filter(
-                    DepartamentoORM.nombre.ilike(f"%{departamento}%")
-                )
+                query = query.filter(DepartamentoORM.nombre.ilike(f"%{departamento}%"))
             if barrio:
                 query = query.filter(BarrioORM.nombre.ilike(f"%{barrio}%"))
 
@@ -428,9 +408,7 @@ class ProfesionalRepository:
             query = query.join(ProfesionalORM.especialidades)
 
             if especialidad_id:
-                query = query.filter(
-                    EspecialidadORM.id_especialidad == especialidad_id
-                )
+                query = query.filter(EspecialidadORM.id_especialidad == especialidad_id)
             elif especialidad_nombre:
                 query = query.filter(
                     EspecialidadORM.nombre.ilike(f"%{especialidad_nombre}%")
@@ -463,8 +441,8 @@ class ProfesionalRepository:
         query = self.session.query(ProfesionalORM)
 
         if solo_activos:
-            query = query.filter(ProfesionalORM.activo == True)
+            query = query.filter(ProfesionalORM.activo)
         if solo_verificados:
-            query = query.filter(ProfesionalORM.verificado == True)
+            query = query.filter(ProfesionalORM.verificado)
 
         return query.count()

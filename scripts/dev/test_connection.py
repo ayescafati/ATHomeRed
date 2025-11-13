@@ -2,7 +2,6 @@
 Script para probar la conexión a la base de datos
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -55,9 +54,7 @@ def test_connection():
     except Exception as e:
         print(f"\n ERROR: {e}")
         print("\n Verifica:")
-        print(
-            "   1. El archivo .env existe y tiene las credenciales correctas"
-        )
+        print("   1. El archivo .env existe y tiene las credenciales correctas")
         print("   2. La base de datos está corriendo (PostgreSQL/MySQL)")
         print("   3. Las credenciales son válidas")
         print("   4. El host y puerto son correctos")

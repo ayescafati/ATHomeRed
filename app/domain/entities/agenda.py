@@ -7,8 +7,6 @@ from uuid import UUID
 from ..value_objects.objetos_valor import Ubicacion
 from ..enumeraciones import EstadoCita
 from ..eventos import (
-    Event,
-    CitaCreada,
     CitaConfirmada,
     CitaCancelada,
     CitaReprogramada,
@@ -46,9 +44,9 @@ class Cita(Subject):
         if self.hora_inicio >= self.hora_fin:
             raise ValueError("hora_inicio debe ser anterior a hora_fin")
 
-        duracion = datetime.combine(
-            date.today(), self.hora_fin
-        ) - datetime.combine(date.today(), self.hora_inicio)
+        duracion = datetime.combine(date.today(), self.hora_fin) - datetime.combine(
+            date.today(), self.hora_inicio
+        )
         if duracion < timedelta(minutes=30):
             raise ValueError("La cita debe durar al menos 30 minutos")
 
@@ -58,9 +56,9 @@ class Cita(Subject):
     @property
     def duracion(self) -> timedelta:
         """Duración de la cita"""
-        return datetime.combine(
-            date.today(), self.hora_fin
-        ) - datetime.combine(date.today(), self.hora_inicio)
+        return datetime.combine(date.today(), self.hora_fin) - datetime.combine(
+            date.today(), self.hora_inicio
+        )
 
     @property
     def esta_pendiente(self) -> bool:
@@ -101,9 +99,7 @@ class Cita(Subject):
         self.estado = EstadoCita.CONFIRMADA
         self.actualizado_en = datetime.now()
 
-        self.notify(
-            CitaConfirmada(cita_id=self.id, confirmado_por=confirmado_por)
-        )
+        self.notify(CitaConfirmada(cita_id=self.id, confirmado_por=confirmado_por))
 
     def cancelar(self, motivo: str = None, cancelado_por: str = None) -> None:
         """
@@ -119,7 +115,6 @@ class Cita(Subject):
         if self.estado == EstadoCita.COMPLETADA:
             raise ValueError("No se puede cancelar una cita completada")
 
-        estado_anterior = self.estado
         self.estado = EstadoCita.CANCELADA
         self.actualizado_en = datetime.now()
 
@@ -127,9 +122,7 @@ class Cita(Subject):
             self.notas = f"{self.notas}\nCancelada: {motivo}".strip()
 
         self.notify(
-            CitaCancelada(
-                cita_id=self.id, motivo=motivo, cancelado_por=cancelado_por
-            )
+            CitaCancelada(cita_id=self.id, motivo=motivo, cancelado_por=cancelado_por)
         )
 
     def completar(self, notas_finales: str = None) -> None:
@@ -175,9 +168,7 @@ class Cita(Subject):
             )
 
         if nueva_hora_inicio >= nueva_hora_fin:
-            raise ValueError(
-                "La hora de inicio debe ser anterior a la hora de fin"
-            )
+            raise ValueError("La hora de inicio debe ser anterior a la hora de fin")
 
         fecha_anterior = f"{self.fecha} {self.hora_inicio}-{self.hora_fin}"
         fecha_nueva = f"{nueva_fecha} {nueva_hora_inicio}-{nueva_hora_fin}"
@@ -215,10 +206,7 @@ class Cita(Subject):
             if otra.fecha != self.fecha or otra.esta_cancelada:
                 continue
 
-            if (
-                self.hora_inicio < otra.hora_fin
-                and self.hora_fin > otra.hora_inicio
-            ):
+            if self.hora_inicio < otra.hora_fin and self.hora_fin > otra.hora_inicio:
                 return True
 
         return False

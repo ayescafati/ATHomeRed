@@ -15,7 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base, SCHEMA
 
 if TYPE_CHECKING:
-    from .auth import RefreshTokenORM
+    pass
 
 
 class UsuarioORM(Base):
@@ -46,18 +46,10 @@ class UsuarioORM(Base):
     es_solicitante: Mapped[bool] = mapped_column(default=True, nullable=False)
     es_profesional: Mapped[bool] = mapped_column(default=False, nullable=False)
 
-    password_hash: Mapped[Optional[str]] = mapped_column(
-        String(255), nullable=True
-    )
-    ultimo_login: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, nullable=True
-    )
-    intentos_fallidos: Mapped[int] = mapped_column(
-        Integer, default=0, nullable=False
-    )
-    bloqueado_hasta: Mapped[Optional[datetime]] = mapped_column(
-        DateTime, nullable=True
-    )
+    password_hash: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    ultimo_login: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    intentos_fallidos: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    bloqueado_hasta: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     activo: Mapped[bool] = mapped_column(default=True, nullable=False)
     verificado: Mapped[bool] = mapped_column(default=False, nullable=False)
 

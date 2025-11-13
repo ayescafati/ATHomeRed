@@ -69,9 +69,7 @@ def obtener_usuario_actual(
     svc = AuthService(db)
     payload = svc.validar_access_token(token)
     if not payload:
-        raise HTTPException(
-            status_code=401, detail="Token inválido o expirado"
-        )
+        raise HTTPException(status_code=401, detail="Token inválido o expirado")
 
     sub = payload.get("sub")
     if not sub:
@@ -127,17 +125,13 @@ def logout(data: LogoutRequest, db=Depends(get_db)):
     revocado = svc.logout(data.refresh_token)
 
     if not revocado:
-        raise HTTPException(
-            status_code=404, detail="Refresh token no encontrado"
-        )
+        raise HTTPException(status_code=404, detail="Refresh token no encontrado")
 
     return {"message": "Sesión cerrada exitosamente"}
 
 
 @router.post("/logout-all", status_code=status.HTTP_200_OK)
-def logout_all(
-    authorization: Optional[str] = Header(default=None), db=Depends(get_db)
-):
+def logout_all(authorization: Optional[str] = Header(default=None), db=Depends(get_db)):
     """
     Cierra todas las sesiones del usuario actual.
 
@@ -152,9 +146,7 @@ def logout_all(
     payload = svc.validar_access_token(token)
 
     if not payload:
-        raise HTTPException(
-            status_code=401, detail="Token inválido o expirado"
-        )
+        raise HTTPException(status_code=401, detail="Token inválido o expirado")
 
     usuario_id = payload.get("sub")
     if not usuario_id:

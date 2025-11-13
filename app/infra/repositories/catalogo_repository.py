@@ -56,9 +56,7 @@ class CatalogoRepository:
             Lista de especialidades del dominio
         """
         orms = (
-            self.session.query(EspecialidadORM)
-            .order_by(EspecialidadORM.nombre)
-            .all()
+            self.session.query(EspecialidadORM).order_by(EspecialidadORM.nombre).all()
         )
         return [self._especialidad_to_domain(orm) for orm in orms]
 
@@ -79,9 +77,7 @@ class CatalogoRepository:
         )
         return self._especialidad_to_domain(orm) if orm else None
 
-    def obtener_especialidad_por_nombre(
-        self, nombre: str
-    ) -> Optional[Especialidad]:
+    def obtener_especialidad_por_nombre(self, nombre: str) -> Optional[Especialidad]:
         """
         Busca una especialidad por su nombre (case-insensitive).
 
@@ -117,9 +113,7 @@ class CatalogoRepository:
         """
         existente = self.obtener_especialidad_por_nombre(nombre)
         if existente:
-            raise ValueError(
-                f"Ya existe una especialidad con el nombre '{nombre}'"
-            )
+            raise ValueError(f"Ya existe una especialidad con el nombre '{nombre}'")
 
         orm = EspecialidadORM(
             nombre=nombre.strip().title(),
@@ -161,11 +155,7 @@ class CatalogoRepository:
         Returns:
             Publicacion del dominio o None si no existe
         """
-        orm = (
-            self.session.query(PublicacionORM)
-            .filter(PublicacionORM.id == id)
-            .first()
-        )
+        orm = self.session.query(PublicacionORM).filter(PublicacionORM.id == id).first()
         return self._publicacion_to_domain(orm) if orm else None
 
     def crear_publicacion(
@@ -194,9 +184,7 @@ class CatalogoRepository:
         """
         especialidad = self.obtener_especialidad_por_id(especialidad_id)
         if not especialidad:
-            raise ValueError(
-                f"No existe la especialidad con ID {especialidad_id}"
-            )
+            raise ValueError(f"No existe la especialidad con ID {especialidad_id}")
 
         if fecha_publicacion is None:
             fecha_publicacion = date.today()
@@ -223,19 +211,13 @@ class CatalogoRepository:
         Returns:
             True si se eliminó, False si no existía
         """
-        orm = (
-            self.session.query(PublicacionORM)
-            .filter(PublicacionORM.id == id)
-            .first()
-        )
+        orm = self.session.query(PublicacionORM).filter(PublicacionORM.id == id).first()
         if orm:
             self.session.delete(orm)
             return True
         return False
 
-    def obtener_tarifa_especialidad(
-        self, especialidad_id: int
-    ) -> Optional[Decimal]:
+    def obtener_tarifa_especialidad(self, especialidad_id: int) -> Optional[Decimal]:
         """
         Obtiene la tarifa actual de una especialidad.
 

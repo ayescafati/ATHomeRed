@@ -21,9 +21,7 @@ class Ubicacion:
     def __post_init__(self):
         if self.latitud is not None and not (-90.0 <= self.latitud <= 90.0):
             raise ValueError("latitud fuera de rango [-90, 90]")
-        if self.longitud is not None and not (
-            -180.0 <= self.longitud <= 180.0
-        ):
+        if self.longitud is not None and not (-180.0 <= self.longitud <= 180.0):
             raise ValueError("longitud fuera de rango [-180, 180]")
 
 
@@ -61,10 +59,7 @@ class Matricula:
     vigente_hasta: Optional[date] = None
 
     def __post_init__(self):
-        if (
-            self.vigente_hasta is not None
-            and self.vigente_hasta < self.vigente_desde
-        ):
+        if self.vigente_hasta is not None and self.vigente_hasta < self.vigente_desde:
             raise ValueError("vigente_hasta < vigente_desde")
 
     def esta_vigente_en(self, fecha: date) -> bool:

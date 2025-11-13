@@ -17,9 +17,7 @@ from app.domain.value_objects.objetos_valor import Ubicacion
 router = APIRouter()
 
 
-@router.post(
-    "/", response_model=PacienteResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/", response_model=PacienteResponse, status_code=status.HTTP_201_CREATED)
 def crear_paciente(
     data: PacienteCreate,
     repo: PacienteRepository = Depends(get_paciente_repository),
@@ -60,16 +58,12 @@ def crear_paciente(
             notas=data.notas or "",
         )
 
-        paciente_creado = repo.crear(
-            paciente, solicitante_id=data.solicitante_id
-        )
+        paciente_creado = repo.crear(paciente, solicitante_id=data.solicitante_id)
 
         return paciente_creado
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -162,9 +156,7 @@ def actualizar_paciente(
         return paciente_actualizado
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.delete("/{paciente_id}", status_code=status.HTTP_204_NO_CONTENT)

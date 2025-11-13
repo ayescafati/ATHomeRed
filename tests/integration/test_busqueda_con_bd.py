@@ -32,9 +32,7 @@ def test_db():
     )
     Base.metadata.create_all(bind=engine)
 
-    TestingSessionLocal = sessionmaker(
-        autocommit=False, autoflush=False, bind=engine
-    )
+    TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
     yield TestingSessionLocal
 
@@ -99,9 +97,7 @@ def db_con_datos_base(db_session):
     )
     db_session.add(barrio)
 
-    especialidad_cardio = EspecialidadORM(
-        id_especialidad=1, nombre="Cardiología"
-    )
+    especialidad_cardio = EspecialidadORM(id_especialidad=1, nombre="Cardiología")
     db_session.add(especialidad_cardio)
 
     db_session.commit()
@@ -137,9 +133,7 @@ class TestBusquedaConBDReal:
         assert response.status_code == 200
         data = response.json()
         assert len(data["especialidades"]) >= 1
-        assert any(
-            esp["nombre"] == "Cardiología" for esp in data["especialidades"]
-        )
+        assert any(esp["nombre"] == "Cardiología" for esp in data["especialidades"])
 
     @pytest.mark.integration
     def test_busqueda_sin_resultados_bd_vacia(self, client, db_con_datos_base):
@@ -157,15 +151,11 @@ class TestBusquedaConBDReal:
     @pytest.mark.skip(
         reason="Requiere profesionales en BD - implementar setup completo"
     )
-    def test_busqueda_profesional_completo(
-        self, client, db_con_datos_base, db_session
-    ):
+    def test_busqueda_profesional_completo(self, client, db_con_datos_base, db_session):
         """
         Test completo: crear profesional en BD y buscarlo
         TODO: Implementar cuando tengas fixtures de profesionales completos
         """
-        from app.infra.persistence.usuarios import UsuarioORM
-        from app.infra.persistence.perfiles import ProfesionalORM
 
         pass
 

@@ -6,13 +6,12 @@ Usa tu instancia de Supabase con transacciones rollback
 import pytest
 import os
 from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import Session
 from sqlalchemy.pool import NullPool
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.api.dependencies import get_db
-from app.infra.persistence.base import Base
 
 
 def get_supabase_test_url():
@@ -56,7 +55,7 @@ def db_session_supabase(supabase_engine):
 
     session = Session(bind=connection)
 
-    nested = connection.begin_nested()
+    connection.begin_nested()
 
     @event.listens_for(session, "after_transaction_end")
     def restart_savepoint(sess, trans):
@@ -178,9 +177,7 @@ class TestIntegracionSupabase:
         """
         payload = {"nombre_especialidad": "Test Cardiología"}
 
-        response = client_supabase.post(
-            "/busqueda/profesionales", json=payload
-        )
+        response = client_supabase.post("/busqueda/profesionales", json=payload)
 
         assert response.status_code == 200
         data = response.json()
@@ -189,9 +186,7 @@ class TestIntegracionSupabase:
 
     @pytest.mark.integration
     @pytest.mark.supabase
-    def test_joins_corregidos_en_supabase(
-        self, client_supabase, seed_supabase_data
-    ):
+    def test_joins_corregidos_en_supabase(self, client_supabase, seed_supabase_data):
         """
         Verifica que la corrección de joins duplicados funcione en Supabase
         Este test fallaría con la versión antigua
@@ -202,9 +197,7 @@ class TestIntegracionSupabase:
             "departamento": "CABA Test",
         }
 
-        response = client_supabase.post(
-            "/busqueda/profesionales", json=payload
-        )
+        response = client_supabase.post("/busqueda/profesionales", json=payload)
 
         assert response.status_code == 200
 
@@ -246,9 +239,7 @@ class TestSupabaseConDatosReales:
 
         payload = {"nombre_especialidad": primera_especialidad}
 
-        response = client_supabase.post(
-            "/busqueda/profesionales", json=payload
-        )
+        response = client_supabase.post("/busqueda/profesionales", json=payload)
 
         assert response.status_code == 200
 

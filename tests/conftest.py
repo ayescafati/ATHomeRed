@@ -3,13 +3,12 @@ Fixtures compartidas para tests
 """
 
 import pytest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import MagicMock
 from uuid import uuid4
-from datetime import date, datetime, time
+from datetime import date, time
 from decimal import Decimal
 
 from app.domain.entities.usuarios import (
-    Usuario,
     Profesional,
     Solicitante,
     Paciente,
@@ -320,16 +319,11 @@ def mock_profesional_repository_con_datos(
     mock = MagicMock(spec=ProfesionalRepository)
 
     # Simulamos los métodos del repositorio con especialidades de ATHomeRed
-    def mock_buscar_por_especialidad(
-        especialidad_id=None, especialidad_nombre=None
-    ):
+    def mock_buscar_por_especialidad(especialidad_id=None, especialidad_nombre=None):
         # Priorizar ID, sino usar nombre
         if especialidad_id == 1 or especialidad_nombre == "Enfermería":
             return [profesional_enfermeria]
-        elif (
-            especialidad_id == 2
-            or especialidad_nombre == "Acompañante Terapéutico"
-        ):
+        elif especialidad_id == 2 or especialidad_nombre == "Acompañante Terapéutico":
             return [profesional_acompanante]
         return []
 
@@ -339,7 +333,9 @@ def mock_profesional_repository_con_datos(
         lambda provincia=None, departamento=None, barrio=None: (
             [profesional_enfermeria]
             if provincia == "Buenos Aires"
-            else [profesional_acompanante] if provincia == "Mendoza" else []
+            else [profesional_acompanante]
+            if provincia == "Mendoza"
+            else []
         )
     )
 
@@ -351,12 +347,9 @@ def mock_profesional_repository_con_datos(
         barrio=None,
     ):
         # Priorizar ID, sino usar nombre
-        es_enfermeria = (
-            especialidad_id == 1 or especialidad_nombre == "Enfermería"
-        )
+        es_enfermeria = especialidad_id == 1 or especialidad_nombre == "Enfermería"
         es_acompanante = (
-            especialidad_id == 2
-            or especialidad_nombre == "Acompañante Terapéutico"
+            especialidad_id == 2 or especialidad_nombre == "Acompañante Terapéutico"
         )
 
         if es_enfermeria and provincia == "Buenos Aires":

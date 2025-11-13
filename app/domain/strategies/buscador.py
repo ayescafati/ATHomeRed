@@ -1,6 +1,5 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import List
 
 from app.domain.entities.catalogo import FiltroBusqueda
 from app.domain.entities.usuarios import Profesional

@@ -30,13 +30,9 @@ def ejemplo_uso_catalogo():
 
         print("\n2. Buscando especialidades de ATHomeRed:")
 
-        acomp_terap = repo.obtener_especialidad_por_nombre(
-            "Acompañamiento Terapéutico"
-        )
+        acomp_terap = repo.obtener_especialidad_por_nombre("Acompañamiento Terapéutico")
         if acomp_terap:
-            print(
-                f"   Encontrada: {acomp_terap.nombre} (ID: {acomp_terap.id})"
-            )
+            print(f"   Encontrada: {acomp_terap.nombre} (ID: {acomp_terap.id})")
             tarifa = repo.obtener_tarifa_especialidad(acomp_terap.id)
             print(f"   Tarifa base: ${tarifa}")
 

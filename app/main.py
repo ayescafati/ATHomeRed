@@ -29,9 +29,7 @@ app.include_router(pacientes.router, prefix="/pacientes", tags=["Pacientes"])
 app.include_router(
     profesionales.router, prefix="/profesionales", tags=["Profesionales"]
 )
-app.include_router(
-    valoraciones.router, prefix="/valoraciones", tags=["Valoraciones"]
-)
+app.include_router(valoraciones.router, prefix="/valoraciones", tags=["Valoraciones"])
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 

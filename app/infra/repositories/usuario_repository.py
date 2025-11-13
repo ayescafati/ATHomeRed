@@ -63,11 +63,7 @@ class UsuarioRepository:
         - Buscar usuario donde email = email
         - Retornar usuario o None
         """
-        return (
-            self.db.query(UsuarioORM)
-            .filter(UsuarioORM.email == email)
-            .one_or_none()
-        )
+        return self.db.query(UsuarioORM).filter(UsuarioORM.email == email).one_or_none()
 
     def obtener_por_id(self, usuario_id) -> Optional[UsuarioORM]:
         """
@@ -82,9 +78,7 @@ class UsuarioRepository:
         except Exception:
             return None
 
-    def actualizar_password(
-        self, usuario_id, nuevo_password_hash: str
-    ) -> bool:
+    def actualizar_password(self, usuario_id, nuevo_password_hash: str) -> bool:
         """
         Actualiza la contraseña de un usuario.
 

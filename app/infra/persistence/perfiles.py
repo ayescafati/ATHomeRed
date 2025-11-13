@@ -4,7 +4,7 @@ import uuid
 from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import UniqueConstraint, ForeignKey, text
-from sqlalchemy.dialects.postgresql import UUID, VARCHAR as Varchar
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, SCHEMA
@@ -48,13 +48,10 @@ class ProfesionalORM(Base):
         nullable=True,
     )
 
-    activo: Mapped[bool] = mapped_column(
-        nullable=False, server_default=text("true")
-    )
+    activo: Mapped[bool] = mapped_column(nullable=False, server_default=text("true"))
     verificado: Mapped[bool] = mapped_column(
         nullable=False, server_default=text("false")
     )
-
 
     usuario: Mapped["UsuarioORM"] = relationship("UsuarioORM")
     direccion: Mapped[Optional["DireccionORM"]] = relationship("DireccionORM")
@@ -122,9 +119,7 @@ class SolicitanteORM(Base):
         nullable=True,
     )
 
-    activo: Mapped[bool] = mapped_column(
-        nullable=False, server_default=text("true")
-    )
+    activo: Mapped[bool] = mapped_column(nullable=False, server_default=text("true"))
 
     usuario: Mapped["UsuarioORM"] = relationship("UsuarioORM")
     direccion: Mapped[Optional["DireccionORM"]] = relationship("DireccionORM")

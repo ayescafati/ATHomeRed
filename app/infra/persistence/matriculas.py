@@ -31,9 +31,7 @@ class MatriculaORM(Base):
             "nro_matricula",
             name="uq_matricula_prof_prov_nro",
         ),
-        CheckConstraint(
-            "vigente_hasta >= vigente_desde", name="ck_matricula_fechas"
-        ),
+        CheckConstraint("vigente_hasta >= vigente_desde", name="ck_matricula_fechas"),
         Index("ix_matricula_profesional", "profesional_id"),
         Index("ix_matricula_provincia", "provincia_id"),
         {"schema": SCHEMA},

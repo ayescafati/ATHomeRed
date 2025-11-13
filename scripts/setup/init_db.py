@@ -4,15 +4,14 @@ Crea todas las tablas usando Alembic
 o SQLAlchemy metadata
 """
 
-import os
 import sys
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
-from app.infra.persistence.database import ENGINE
-from app.infra.persistence.base import Base
+from app.infra.persistence.database import ENGINE  # noqa: E402
+from app.infra.persistence.base import Base  # noqa: E402
 
 
 def main():
@@ -27,20 +26,6 @@ def main():
     print("=" * 60)
     print("INICIALIZANDO BASE DE DATOS")
     print("=" * 60)
-
-    from app.infra.persistence import (
-        usuarios,
-        perfiles,
-        paciente,
-        ubicacion,
-        servicios,
-        agenda,
-        valoraciones,
-        matriculas,
-        publicaciones,
-        relaciones,
-        auth,
-    )
 
     print(f"\n Base de datos: {ENGINE.url}")
 

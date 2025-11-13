@@ -4,7 +4,6 @@ schema 'athome' y la extensión 'pgcrypto', lista tablas (incluida 'usuario' y
 
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 from contextlib import closing
@@ -18,7 +17,7 @@ if str(ROOT) not in sys.path:
 
 load_dotenv()
 
-from app.infra.persistence.database import ENGINE, DATABASE_URL
+from app.infra.persistence.database import ENGINE, DATABASE_URL  # noqa: E402
 
 
 def mask_url(url: str) -> str:
@@ -47,9 +46,7 @@ def main() -> int:
             try:
                 conn.execute(text("create schema if not exists athome"))
                 conn.execute(text("create extension if not exists pgcrypto"))
-                print(
-                    "[check_db] Ensured schema 'athome' and extension 'pgcrypto'."
-                )
+                print("[check_db] Ensured schema 'athome' and extension 'pgcrypto'.")
             except Exception as e:
                 print(
                     "[check_db] Note: couldn't create schema/extension (permission?):",
@@ -76,9 +73,7 @@ def main() -> int:
                         cnt = conn.execute(
                             text("select count(*) from athome.usuario")
                         ).scalar_one()
-                        print(
-                            f"[check_db] Table athome.usuario exists. Rows: {cnt}"
-                        )
+                        print(f"[check_db] Table athome.usuario exists. Rows: {cnt}")
                     else:
                         print("[check_db] Table athome.usuario NOT found.")
                 av = conn.execute(
@@ -96,9 +91,7 @@ def main() -> int:
                     for s, t in av:
                         print(f" - {s}.{t}")
                 else:
-                    print(
-                        "[check_db] No alembic_version table found in any schema."
-                    )
+                    print("[check_db] No alembic_version table found in any schema.")
                 print(
                     "[check_db] Table counts per schema (excluding information_schema/pg_catalog):"
                 )

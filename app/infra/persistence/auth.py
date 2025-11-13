@@ -41,7 +41,9 @@ class RefreshTokenORM(Base):
     revocado = Column(Boolean, default=False, nullable=False)
     ip_address = Column(String(45), nullable=True)
     user_agent = Column(String(255), nullable=True)
-    creado_en = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    creado_en = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
 
     usuario = relationship("UsuarioORM", back_populates="refresh_tokens")
 

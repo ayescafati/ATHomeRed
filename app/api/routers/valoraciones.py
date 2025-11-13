@@ -77,9 +77,7 @@ def crear_valoracion(
         return valoracion_creada
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
@@ -89,9 +87,7 @@ def crear_valoracion(
         )
 
 
-@router.get(
-    "/profesional/{profesional_id}", response_model=List[ValoracionResponse]
-)
+@router.get("/profesional/{profesional_id}", response_model=List[ValoracionResponse])
 def listar_valoraciones_profesional(
     profesional_id: UUID,
     limite: int = 100,

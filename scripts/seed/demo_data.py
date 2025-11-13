@@ -8,11 +8,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from sqlalchemy import text, insert
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.infra.persistence.database import ENGINE
 from uuid import uuid4
-from datetime import date, time
 
 
 def demo_data():
@@ -278,18 +277,16 @@ def demo_data():
                 )
             )
         session.commit()
-        print(f"Disponibilidades L-V 8:00-18:00")
+        print("Disponibilidades L-V 8:00-18:00")
 
         print("\n" + "=" * 70)
         print("DATOS DE DEMOSTRACIÓN CREADOS EXITOSAMENTE")
         print("=" * 70)
-        print(
-            "\n ATHOME - Plataforma de Acompañantes Terapéuticos y Enfermeros"
-        )
+        print("\n ATHOME - Plataforma de Acompañantes Terapéuticos y Enfermeros")
         print(
             "   Especialidades: Acompañante Terapéutico, Enfermero, Enfermero Especializado"
         )
-        print(f"\n IDs PARA SWAGGER:")
+        print("\n IDs PARA SWAGGER:")
         print(f"  • Paciente ID:      {pac_id}")
         print(f"  • Acompañante/Enfermero ID:   {prof_id}")
         print(f"  • Solicitante ID:   {sol_id}")

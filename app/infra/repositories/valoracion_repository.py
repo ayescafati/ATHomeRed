@@ -48,7 +48,6 @@ class ValoracionRepository:
             Modelo ORM de la valoración
         """
         if orm is None:
-
             orm = ValoracionORM(
                 id=valoracion.id,
                 profesional_id=valoracion.id_profesional,
@@ -57,7 +56,6 @@ class ValoracionRepository:
                 comentario=valoracion.comentario,
             )
         else:
-
             orm.puntuacion = valoracion.puntuacion
             orm.comentario = valoracion.comentario
 
@@ -73,11 +71,7 @@ class ValoracionRepository:
         Returns:
             Valoracion o None si no existe
         """
-        orm = (
-            self.session.query(ValoracionORM)
-            .filter(ValoracionORM.id == id)
-            .first()
-        )
+        orm = self.session.query(ValoracionORM).filter(ValoracionORM.id == id).first()
 
         return self._to_domain(orm) if orm else None
 
@@ -217,11 +211,7 @@ class ValoracionRepository:
         Returns:
             True si se eliminó, False si no existía
         """
-        orm = (
-            self.session.query(ValoracionORM)
-            .filter(ValoracionORM.id == id)
-            .first()
-        )
+        orm = self.session.query(ValoracionORM).filter(ValoracionORM.id == id).first()
 
         if not orm:
             return False
@@ -231,9 +221,7 @@ class ValoracionRepository:
 
         return True
 
-    def existe_valoracion(
-        self, profesional_id: UUID, paciente_id: UUID
-    ) -> bool:
+    def existe_valoracion(self, profesional_id: UUID, paciente_id: UUID) -> bool:
         """
         Verifica si ya existe una valoración de un paciente para un profesional.
 

@@ -75,9 +75,7 @@ def buscar_profesionales(
                 )
 
         if especialidad_id:
-            especialidad = catalogo_repo.obtener_especialidad_por_id(
-                especialidad_id
-            )
+            especialidad = catalogo_repo.obtener_especialidad_por_id(especialidad_id)
             if not especialidad:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -118,9 +116,7 @@ def buscar_profesionales(
         )
 
     except ValueError as ve:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -171,8 +167,7 @@ def listar_departamentos(
         departamentos = repo.listar_departamentos(provincia_id)
         return {
             "departamentos": [
-                {"id": str(depto.id), "nombre": depto.nombre}
-                for depto in departamentos
+                {"id": str(depto.id), "nombre": depto.nombre} for depto in departamentos
             ]
         }
     except Exception as e:
@@ -194,8 +189,7 @@ def listar_barrios(
         barrios = repo.listar_barrios(departamento_id)
         return {
             "barrios": [
-                {"id": str(barrio.id), "nombre": barrio.nombre}
-                for barrio in barrios
+                {"id": str(barrio.id), "nombre": barrio.nombre} for barrio in barrios
             ]
         }
     except Exception as e:

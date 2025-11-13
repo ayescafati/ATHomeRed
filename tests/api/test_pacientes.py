@@ -7,12 +7,10 @@ de los endpoints sin dependencia de base de datos real.
 
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from uuid import uuid4
-from datetime import date
 
 from app.main import app
-from app.api.schemas import PacienteCreate, UbicacionSchema
 
 
 @pytest.fixture
@@ -52,9 +50,7 @@ def paciente_create_data(ubicacion_dict):
 class TestPacientesRouter:
     """Tests para el router de pacientes"""
 
-    def test_crear_paciente_nombre_muy_corto(
-        self, client, paciente_create_data
-    ):
+    def test_crear_paciente_nombre_muy_corto(self, client, paciente_create_data):
         """POST /pacientes - Validar nombre mínimo"""
         paciente_create_data["nombre"] = "R"
 
@@ -64,9 +60,7 @@ class TestPacientesRouter:
 
     def test_crear_paciente_email_invalido(self, client, paciente_create_data):
         """POST /pacientes - Validar formato email"""
-        with patch(
-            "app.api.dependencies.get_paciente_repository"
-        ) as mock_repo_dep:
+        with patch("app.api.dependencies.get_paciente_repository") as mock_repo_dep:
             mock_repo = Mock()
             mock_repo.crear.side_effect = ValueError("Email inválido")
             mock_repo_dep.return_value = mock_repo
@@ -80,9 +74,7 @@ class TestPacientesRouter:
         """GET /pacientes/{id} - Paciente no encontrado"""
         paciente_id = uuid4()
 
-        with patch(
-            "app.api.dependencies.get_paciente_repository"
-        ) as mock_repo_dep:
+        with patch("app.api.dependencies.get_paciente_repository") as mock_repo_dep:
             mock_repo = Mock()
             mock_repo.obtener_por_id.return_value = None
             mock_repo_dep.return_value = mock_repo
@@ -95,9 +87,7 @@ class TestPacientesRouter:
         """PUT /pacientes/{id} - Actualizar paciente que no existe"""
         paciente_id = uuid4()
 
-        with patch(
-            "app.api.dependencies.get_paciente_repository"
-        ) as mock_repo_dep:
+        with patch("app.api.dependencies.get_paciente_repository") as mock_repo_dep:
             mock_repo = Mock()
             mock_repo.obtener_por_id.return_value = None
             mock_repo_dep.return_value = mock_repo
@@ -112,9 +102,7 @@ class TestPacientesRouter:
         """DELETE /pacientes/{id} - Eliminar paciente que no existe"""
         paciente_id = uuid4()
 
-        with patch(
-            "app.api.dependencies.get_paciente_repository"
-        ) as mock_repo_dep:
+        with patch("app.api.dependencies.get_paciente_repository") as mock_repo_dep:
             mock_repo = Mock()
             mock_repo.eliminar.return_value = False
             mock_repo_dep.return_value = mock_repo

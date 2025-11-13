@@ -23,9 +23,5 @@ def promedio_valoraciones(
     valoraciones: list[Valoracion], id_profesional: UUID
 ) -> float:
     """Devuelve el promedio de valoraciones (o 0.0 si no hay ninguna)."""
-    propias = [
-        v.puntuacion
-        for v in valoraciones
-        if v.id_profesional == id_profesional
-    ]
+    propias = [v.puntuacion for v in valoraciones if v.id_profesional == id_profesional]
     return sum(propias) / len(propias) if propias else 0.0

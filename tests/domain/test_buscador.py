@@ -2,9 +2,6 @@
 Tests unitarios para el Buscador
 """
 
-import pytest
-from unittest.mock import Mock, MagicMock
-
 from app.domain.strategies.buscador import Buscador
 from app.domain.strategies.estrategia import (
     BusquedaPorZona,
@@ -71,12 +68,10 @@ class TestBuscador:
         )
 
         filtro1 = FiltroBusqueda(nombre_especialidad="Cardiología")
-        resultado1 = buscador.buscar(filtro1)
-        profesionales_primero = buscador.profesionales
+        buscador.buscar(filtro1)
 
         filtro2 = FiltroBusqueda(nombre_especialidad="Dermatología")
         resultado2 = buscador.buscar(filtro2)
-        profesionales_segundo = buscador.profesionales
 
         assert buscador.profesionales == resultado2
 
@@ -109,9 +104,7 @@ class TestBuscador:
         )
 
         filtro_vacio = FiltroBusqueda()
-        mock_profesional_repository_con_datos.buscar_por_especialidad.return_value = (
-            []
-        )
+        mock_profesional_repository_con_datos.buscar_por_especialidad.return_value = []
 
         resultado = buscador.buscar(filtro_vacio)
 
@@ -167,9 +160,7 @@ class TestBuscadorIntegracion:
 
         assert isinstance(resultados, list)
 
-    def test_cambio_estrategia_midstream(
-        self, mock_profesional_repository_con_datos
-    ):
+    def test_cambio_estrategia_midstream(self, mock_profesional_repository_con_datos):
         """Cambiar estrategia mientras se usa el buscador"""
         buscador = Buscador(
             repo=mock_profesional_repository_con_datos,
