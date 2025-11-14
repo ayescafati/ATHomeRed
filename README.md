@@ -22,7 +22,7 @@
   - [Patrones y arquitectura](#patrones-y-arquitectura)
 - [Diagramas UML](#diagramas-uml)
   - [Diagrama de clases](#diagrama-de-clases)
-  - [Diagrama de base de datos](#diagrama-de-base-de-datos)
+  - [Diagrama de base de datos](#diagrama-de-bases-de-datos)
 - [Tecnologías](#tecnologías)
 - [Configuración](#configuración)
 - [Puesta en marcha](#puesta-en-marcha)
@@ -72,8 +72,6 @@ ATHomeRed-main/
 ├── alembic.ini                        # Configuración de Alembic
 ├── LICENSE                            # Licencia del proyecto
 ├── requirements.txt                   # Dependencias de Python (pip)
-├── out
-│   └── dominioUML                     # Diagramas UML 
 ├── alembic/
 │   ├── env.py                         # Bootstrapping de Alembic (DB/session)
 │   ├── script.py.mako                 # Template para nuevas migraciones
@@ -84,7 +82,6 @@ ATHomeRed-main/
 │   ├── __init__.py
 │   ├── main.py                        # Instancia FastAPI y registra routers
 │   ├── api/
-│   │   ├── data.py                    # Datos de demo/mock (si aplica)
 │   │   ├── dependencies.py            # Dependencias (DI) para routers/servicios
 │   │   ├── event_bus.py               # Instancia y wiring del EventBus
 │   │   ├── policies.py                # IntegrityPolicies (reglas/validaciones)
@@ -96,6 +93,8 @@ ATHomeRed-main/
 │   │       ├── pacientes.py           # Router para gestión de pacientes
 │   │       ├── profesionales.py       # Router para gestión de profesionales
 │   │       └── valoraciones.py        # Router para gestión de valoraciones
+│   ├── docs/
+│   │   └── uml/                       # Diagramas UML
 │   ├── domain/                        # Capa de dominio (sin dependencias infra)
 │   │   ├── enumeraciones.py           # Enums de dominio (EstadoCita, DíaSemana)
 │   │   ├── eventos.py                 # Eventos de dominio (CitaCreada, CitaConfirmada, etc.)
@@ -114,42 +113,54 @@ ATHomeRed-main/
 │   │       └── objetos_valor.py       # Ubicacion, Disponibilidad, Matricula (VOs)
 │   ├── infra/                         # Capa de infraestructura (ORM/repos/servicios)
 │   │   ├── persistence/               # Modelos ORM y utilidades DB
-│   │   │   ├── agenda.py              # Mapeos ORM de agenda/citas
-│   │   │   ├── auth.py                # Modelos ORM para autenticación y auditoría
-│   │   │   ├── base.py                # Declarative Base y metadatos
-│   │   │   ├── database.py            # Engine/Session y conexión a DB
-│   │   │   ├── matriculas.py          # ORM de matrículas profesionales
-│   │   │   ├── paciente.py            # ORM de pacientes
-│   │   │   ├── perfiles.py            # ORM de perfiles/roles (si aplica)
+│   │   │   ├── agenda.py              # Define modelos ORM para agenda, disponibilidades y consultas de profesionales
+│   │   │   ├── auth.py                # Define modelos ORM para autenticación: refresh tokens y su relación con usuarios
+│   │   │   ├── base.py                # Define la clase base declarativa y el esquema para los modelos ORM
+│   │   │   ├── database.py            # Configura la conexión SQLAlchemy y la sesión de base de datos para la aplicación
+│   │   │   ├── matriculas.py          # Define el modelo ORM de SQLAlchemy para matrículas profesionales y su relación con profesionales
+│   │   │   ├── paciente.py            # Define el modelo ORM de SQLAlchemy para la entidad Paciente y sus relaciones
+│   │   │   ├── perfiles.py            # Define modelos ORM de SQLAlchemy para perfiles de profesional y solicitante, con sus relaciones
 │   │   │   ├── publicaciones.py       # ORM de publicaciones de profesionales
 │   │   │   ├── relaciones.py          # Tablas relacionales auxiliares
 │   │   │   ├── servicios.py           # ORM de catálogo/servicios
 │   │   │   ├── ubicacion.py           # ORM de direcciones/geo
 │   │   │   ├── usuarios.py            # ORM de usuarios
 │   │   │   └── valoraciones.py        # ORM de valoraciones
-│   │   └──  repositories/              # Repositorios (aislan dominio de ORM/DB)
-│   │       ├── auth_repository.py     # Acceso persistente relacionado a auth
-│   │       ├── catalogo_repository.py # Acceso a catálogo (especialidades/servicios)
-│   │       ├── consulta_repository.py # Acceso a citas/consultas (CRUD/listados)
-│   │       ├── direccion_repository.py# Provincias/deptos/barrios
-│   │       ├── paciente_repository.py # Acceso a pacientes
-│   │       ├── profesional_repository.py # Acceso a profesionales
-│   │       ├── usuario_repository.py  # Acceso a usuarios, intentos/lock/último login
-│   │       └── valoracion_repository.py # Acceso a valoraciones
+│   │   └──  repositories/                # Repositorios (aislan dominio de ORM/DB)
+│   │       ├── auth_repository.py        # Repositorio para operaciones de autenticación: gestión de refresh tokens y login en la base de datos
+│   │       ├── catalogo_repository.py    # Repositorio para consultar y gestionar el catálogo de especialidades y servicios
+│   │       ├── consulta_repository.py    # Repositorio para gestionar consultas médicas: creación, búsqueda y actualización en la base de datos
+│   │       ├── direccion_repository.py   # Repositorio para gestionar direcciones: alta, búsqueda y actualización en la base de datos
+│   │       ├── paciente_repository.py    # Repositorio para gestionar pacientes: alta, búsqueda y actualización en la base de datos.
+│   │       ├── profesional_repository.py # Repositorio para gestionar profesionales: alta, búsqueda y actualización en la base de datos
+│   │       ├── usuario_repository.py     # Repositorio para gestionar usuarios: alta, búsqueda y actualización en la base de datos
+│   │       └── valoracion_repository.py  # Repositorio para gestionar valoraciones: alta, búsqueda y actualización de valoraciones de profesionales
 │   ├── services/
-│   │   └── auth_service.py            # Servicio de autenticación
+│   │   └── auth_service.py            # Servicio de autenticación: registro, login, generación y validación de tokens JWT
 │   ├── static/
-│   │   ├── app.js                     # UI mínima/demo (app)
-│   │   └── index.html                 # UI mínima/demo (app)
+│   │   ├── app.js                     # JavaScript para la interfaz web: maneja interacciones y peticiones de la aplicación
+│   │   └── index.html                 # Página HTML principal de la aplicación web; estructura y muestra la interfaz al usuario
 ├── docker/
-│   └── docker-compose.yml             # Orquestado de servicios (PostgreSQL, etc.)
+│   └── docker-compose.yml             # Orquesta servicios y contenedores Docker necesarios para el entorno de desarrollo y pruebas
 └── scripts/                           # Scripts utilitarios de desarrollo/ops
-    ├── apply_sql.py                   # Aplicar SQL raw contra la DB
-    ├── check_db.py                    # Chequeo rápido de conexión a DB
-    ├── create_schema.py               # Creación de esquema/namespaces
-    ├── init_db.py                     # Inicialización/seed básico
-    ├── smoke_auth.py                  # Smoke test de registro/login
-    └── test_connection.py             # Prueba de conexión y parámetros
+    ├─ dev/
+    │  ├─ __init__.py
+    │  ├─ check_db.py                  # Verifica la conexión y disponibilidad de la base de datos del entorno de desarrollo
+    │  ├─ ejemplo_catalogo.py          # Ej. de uso del catálogo: consulta y muestra especialidades y servicios disponibles
+    │  ├─ smoke_auth.py                # Script de prueba rápida para verificar el funcionamiento básico del sistema de autenticación
+    │  ├─ test_auth_completo.py        # Script de prueba completa para validar todos los endpoints del flujo de autenticación
+    │  ├─ test_connection.py           # Script para probar la conexión básica a la base de datos del sistema
+    │  └─ test-helpers.ps1             # Verifica que la aplicación pueda conectarse correctamente a la base de datos configurada
+    ├─ seed/
+    │  ├─ __init__.py
+    │  ├─ demo_data.py
+    │  └─ seed_especialidades.py
+    └─ setup/
+       ├─ __init__.py
+       ├─ apply_sql.py
+       ├─ create_schema.py
+       └─ init_db.py
+
 ```
 
 ### Implementaciones
@@ -262,47 +273,45 @@ El patrón **Repository** separa el dominio de los detalles de persistencia. Los
 
 La **arquitectura en capas** se refleja en tres espacios principales: `app/domain/` (entidades, eventos, value objects y estrategias, sin dependencias de infraestructura), `app/infra/` (ORM, repositorios y servicios de aplicación como autenticación) y `app/api/` (routers, dependencias, esquemas, *event bus* y *policies*). Esta separación hace que el dominio no dependa de la infraestructura y que la API publique casos de uso manteniendo el acoplamiento bajo control.
 
+En nuestro proyecto usamos decoradores de forma transversal y concreta: declaramos endpoints con `@app.get("/health")` y `@app.get("/")` en `app/main.py`, y en `app/api/routers/busqueda.py` definimos la ruta de búsqueda con `@router.post("/profesionales", response_model=BusquedaProfesionalResponse)`. En ese mismo router combinamos esos decoradores de ruta con la inyección de dependencias vía `Depends(...)` para obtener repositorios como `get_profesional_repository` y `get_catalogo_repository` sin acoplarlos a la vista. En el módulo de políticas (`app/api/policies.py`) usamos decoradores del lenguaje, por ejemplo `@staticmethod` en `validar_solicitante_es_dueno`, para expresar reglas de autorización como utilidades claras y reutilizables. Incluso en las pruebas aplicamos decoradores de Pytest, como `@pytest.mark.authflow` y `@pytest.mark.auth_neg` en `tests/api/test_auth.py`, para marcar escenarios y filtrar ejecuciones. En espíritu, estos decoradores “añaden comportamiento” sin modificar los objetos, de un modo análogo al patrón GoF *Decorator*; sin embargo, en nuestro código su rol es estrictamente idiomático e infraestructural de Python, FastAPI y Pytest, y no modelamos un *Decorator* como objeto de dominio.
+
 En cuanto al **estado actual**, el proyecto ya cuenta con Strategy operativo en el router de búsqueda, Observer funcional en modo demostrativo, y Repository para aislar dominio y persistencia; además, hay esquema de base de datos y endpoints integrados a la API. 
 
 ---
 
 ## Diagramas UML
 
-El proyecto incluye **dos** diagramas UML: uno de **clases** (dominio + patrones) y otro de **base de datos**.
+El proyecto incluye **dos** diagramas UML: uno de **clases** (dominio y patrones) y otro de **base de datos** (esquema físico).
 
-### Diagrama de clases
+### Diagrama de clases 
 
-- **[Ver diagrama de clases](out/dominioUML/ATHomeRed_Domain_UML.png)**
+- **[Diagrama de clases (MVP + búsqueda)](app/docs/uml/clases-uml-v1.svg)**
 
-El diagrama refleja el estado actual del **dominio** y los **patrones** aplicados. 
+El diagrama de clases refleja el estado actual del **dominio** y los **patrones** aplicados. La terminología está unificada: se usa **Solicitante** (no “Responsable”) y se muestra **Cita/Consulta** como la misma entidad de negocio.
 
-**Qué muestra**
+### Qué muestra
 
-* **Entidades principales:** `Usuario` *(abstracta)*, `Solicitante`, `Profesional`, `Paciente`; agenda: `Cita` (con `EstadoCita`); catálogo: `Especialidad`, `Tarifa`, `Publicacion`, `Valoracion`.
-* **Value Objects:** `Ubicacion`, `Disponibilidad`, `Matricula`, `Dinero`, `Vigencia`; enums `DiaSemana` y `EstadoCita`.
-* **Búsqueda (Strategy):** `Buscador` (contexto), `EstrategiaBusqueda` (interfaz), `BusquedaPorZona`, `BusquedaPorEspecialidad`, `BusquedaCombinada`, `FiltroBusqueda`.
-* **Asignación (Strategy):** `AsignacionStrategy`, `DisponibilidadHorariaStrategy`, `MatriculaProvinciaStrategy`.
-* **Observer / EventBus:** `Event` + eventos de `Cita` (`CitaCreada`, `CitaConfirmada`, `CitaCancelada`, `CitaReprogramada`, `CitaCompletada`), `Subject`, `Observer`, `EventBus`, `NotificadorEmail`, `AuditLogger`.
+- **Entidades principales**
+  - `Usuario` *(abstracta)*, `Solicitante`, `Profesional`, `Paciente`
+  - *Value Objects*: `Ubicacion`, `Disponibilidad`, `Matricula`
+  - Catálogo/servicios: `Especialidad`, `Tarifa`, `Publicacion`
+  - Agenda: `Cita`/`Consulta` (con `EstadoCita`)
 
-**Relaciones clave**
+- **Relaciones clave**
+  - `Solicitante` **1..*** `Paciente` (un solicitante puede gestionar varios pacientes)
+  - `Profesional` **1..*** `Disponibilidad`
+  - `Profesional` ***..*** `Especialidad`
+  - `Cita` **1..1** `Profesional` y **1..1** `Paciente`; referencia una `Ubicacion`
 
-* `Usuario` **1..1** `Ubicacion` (aplica por herencia a `Solicitante` y `Profesional`); además `Paciente` **1..1** `Ubicacion`.
-* `Solicitante` **1..*** `Paciente`.
-* `Profesional` **1..*** `Disponibilidad` y ***..*** `Especialidad`; **1..*** `Matricula`.
-* `Cita` **1..1** `Profesional` y **1..1** `Paciente`; **1..1** `Ubicacion`; asociación opcional con `Dinero`.
-* `Valoracion` → `Profesional` y `Paciente`.
+- **Patrones representados**
+  - **Strategy (búsqueda/asignación):** `Buscador` (contexto), `Estrategia` (interfaz),
+    `BusquedaPorZona`, `BusquedaPorEspecialidad`, `BusquedaCombinada`
+  - **Observer (notificaciones/auditoría):** `Observer`, `Subject`, `NotificadorEmail`,
+    `AuditLogger`, `Event` (eventos de `Cita`)
 
-**Notas de lectura**
+### Diagrama de bases de datos
 
-* `Cita` **implementa `Subject`** y **dispara eventos**; el **`EventBus`** desacopla emisores de observadores.
-* `Buscador` es el **contexto Strategy**: permite cambiar la estrategia de búsqueda en tiempo de ejecución.
-
-### Diagrama de base de datos
-
-- **[Ver diagrama de base de datos](app/docs/uml/db-uml-v1.svg)**
-
-> Nota: el diagrama de DB se está alineando con el dominio actual. Hoy sirve como referencia de tablas, claves y relaciones principales.
-
+- **[Diagrama de base de datos](app/docs/uml/db-uml-v1.svg)**
 
 
 ---
@@ -341,91 +350,36 @@ Variables relevantes:
 
 ## Puesta en marcha
 
-> Requisitos: *(Opcional)* Docker Desktop · *(Opcional)* Conda/Mamba  
-> *(La versión de Python está detallada en **Tecnologías**.)*
+### Local
+```bash
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# Linux/Mac:
+source .venv/bin/activate
 
-### 1) Clonar y preparar variables
-Cloná el repo y creá tu `.env` a partir del ejemplo:
-    
-    # Clonar el repo y entrar
-    git clone <URL-de-tu-repo>
-    cd <carpeta-del-repo>
-    
-    # Crear .env a partir del ejemplo y completar valores (DB, SECRET, etc.)
-    cp .env.example .env
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+# Abrí http://localhost:8000 y /docs
+```
 
-### 2A) Opción local (venv)
-Creá un entorno virtual, instalá dependencias, corré migraciones y levantá la API:
-    
-    # Crear y activar entorno
-    python -m venv .venv
-    # Windows
-    .venv\Scripts\activate
-    # Linux/Mac
-    source .venv/bin/activate
-    
-    # Instalar dependencias
-    pip install -r requirements.txt
-    
-    # Migraciones
-    alembic upgrade head
-    
-    # Levantar la API
-    uvicorn app.main:app --reload
-    # Abrí http://localhost:8000/docs
+### Con Docker (DB)
+```bash
+docker compose -f docker/docker-compose.yml up -d   # levanta PostgreSQL
+alembic upgrade head                                 # aplica migraciones
+uvicorn app.main:app --reload                        # levanta la API
+```
 
-### 2B) Opción con Conda/Mamba (alternativa)
-Si preferís Conda/Mamba:
-    
-    # Crear y activar entorno
-    mamba create -n athomered python=3.11 -y   # o conda create ...
-    conda activate athomered
-    
-    # Instalar dependencias
-    pip install -r requirements.txt
-    
-    # Migraciones
-    alembic upgrade head
-    
-    # Correr API
-    uvicorn app.main:app --reload
+### Migraciones
+```bash
+# Crear una nueva migración
+alembic revision -m "descripcion" --autogenerate
 
-### 2C) Docker (solo base de datos)
-Levantá PostgreSQL con Docker y usá tu entorno local para la API:
-    
-    # Levantar PostgreSQL en Docker
-    docker compose -f docker/docker-compose.yml up -d
-    
-    # Aplicar migraciones contra la DB de Docker
-    alembic upgrade head
-    
-    # Levantar la API
-    uvicorn app.main:app --reload
+# Aplicar
+alembic upgrade head
 
-### 3) Comprobación rápida
-Probá que la API responda y el login funcione:
-    
-    # Documentación interactiva
-    # http://localhost:8000/docs
-    
-    # Ejemplo de login (reemplazar email/password por los tuyos)
-    curl -X POST "http://localhost:8000/api/v1/auth/login" ^
-      -H "Content-Type: application/json" ^
-      -d "{\"email\":\"probando@gmail.com\",\"password\":\"Prueba123.\"}"
-
-> Tip: en `scripts/` hay utilidades como `check_db.py` / `test_connection.py` (conexión DB) y `smoke_auth.py` (flujo de auth).
-
-### 4) Migraciones (referencia)
-Comandos útiles de Alembic:
-    
-    # Crear una nueva migración
-    alembic revision -m "descripcion" --autogenerate
-    
-    # Aplicar
-    alembic upgrade head
-    
-    # Revertir
-    alembic downgrade -1
+# Revertir
+alembic downgrade -1
+```
 
 ---
 
