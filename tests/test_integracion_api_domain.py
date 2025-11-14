@@ -15,19 +15,19 @@ from app.domain.value_objects.objetos_valor import (
 from app.domain.enumeraciones import DiaSemana
 from uuid import uuid4
 
+from app.api.routers.busqueda import (
+    Buscador,
+    BusquedaPorZona,
+    BusquedaPorEspecialidad,
+    BusquedaCombinada,
+)
+
 
 class TestIntegracionAPIaDomain:
     """Tests de integración entre API y Domain"""
 
     def test_domain_strategies_importan_correctamente(self):
         """Verifica que se pueden importar las estrategias del domain desde la API"""
-        from app.api.routers.busqueda import (
-            Buscador,
-            BusquedaPorZona,
-            BusquedaPorEspecialidad,
-            BusquedaCombinada,
-        )
-
         assert Buscador is not None
         assert BusquedaPorZona is not None
         assert BusquedaPorEspecialidad is not None

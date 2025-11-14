@@ -27,9 +27,6 @@ from app.domain.value_objects.objetos_valor import (
 from app.infra.repositories.profesional_repository import ProfesionalRepository
 
 
-# ==================== UBICACIONES ====================
-
-
 @pytest.fixture
 def ubicacion_buenos_aires():
     """Ubicación en CABA"""
@@ -72,9 +69,6 @@ def ubicacion_cordoba():
     )
 
 
-# ==================== ESPECIALIDADES ====================
-
-
 @pytest.fixture
 def especialidad_enfermeria():
     """Especialidad: Enfermería (servicio principal de ATHomeRed)"""
@@ -93,9 +87,6 @@ def especialidad_acompanante():
 def especialidad_geriatria():
     """Especialidad: Geriatría (atención a adultos mayores)"""
     return Especialidad(id=3, nombre="Geriatría", tarifa=Decimal("2800.00"))
-
-
-# ==================== DISPONIBILIDADES ====================
 
 
 @pytest.fixture
@@ -122,9 +113,6 @@ def disponibilidad_miercoles_tarde():
     )
 
 
-# ==================== MATRÍCULAS ====================
-
-
 @pytest.fixture
 def matricula_buenos_aires():
     """Matrícula en Buenos Aires"""
@@ -149,9 +137,6 @@ def matricula_mendoza():
         vigente_desde=date(2021, 1, 1),
         vigente_hasta=date(2031, 12, 31),
     )
-
-
-# ==================== USUARIOS ====================
 
 
 @pytest.fixture
@@ -228,9 +213,6 @@ def solicitante_mendoza(ubicacion_mendoza):
     )
 
 
-# ==================== PACIENTES ====================
-
-
 @pytest.fixture
 def paciente(solicitante):
     """Paciente de 45 años"""
@@ -261,9 +243,6 @@ def paciente_hijo(solicitante):
     )
     solicitante.agregar_paciente(paciente)
     return paciente
-
-
-# ==================== FILTROS ====================
 
 
 @pytest.fixture
@@ -300,9 +279,6 @@ def filtro_acompanante_mendoza():
     )
 
 
-# ==================== MOCKS DE REPOSITORIO ====================
-
-
 @pytest.fixture
 def mock_profesional_repository():
     """Mock del ProfesionalRepository"""
@@ -318,9 +294,7 @@ def mock_profesional_repository_con_datos(
     """Mock del repositorio con datos precargados (ATHomeRed)"""
     mock = MagicMock(spec=ProfesionalRepository)
 
-    # Simulamos los métodos del repositorio con especialidades de ATHomeRed
     def mock_buscar_por_especialidad(especialidad_id=None, especialidad_nombre=None):
-        # Priorizar ID, sino usar nombre
         if especialidad_id == 1 or especialidad_nombre == "Enfermería":
             return [profesional_enfermeria]
         elif especialidad_id == 2 or especialidad_nombre == "Acompañante Terapéutico":
@@ -346,7 +320,6 @@ def mock_profesional_repository_con_datos(
         departamento=None,
         barrio=None,
     ):
-        # Priorizar ID, sino usar nombre
         es_enfermeria = especialidad_id == 1 or especialidad_nombre == "Enfermería"
         es_acompanante = (
             especialidad_id == 2 or especialidad_nombre == "Acompañante Terapéutico"
@@ -361,9 +334,6 @@ def mock_profesional_repository_con_datos(
     mock.buscar_combinado.side_effect = mock_buscar_combinado
 
     return mock
-
-
-# ==================== TARJETAS Y PUBLICACIONES ====================
 
 
 @pytest.fixture

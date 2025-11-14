@@ -4,8 +4,14 @@ Verifican que todos los datos cargados son accesibles vía API
 """
 
 import pytest
+from sqlalchemy import text
 
-# Importar fixtures de test_supabase
+from app.infra.persistence.matriculas import MatriculaORM
+from app.infra.persistence.perfiles import ProfesionalORM
+from app.infra.persistence.agenda import DisponibilidadORM
+from app.infra.persistence.publicaciones import PublicacionORM
+
+
 pytest_plugins = ["tests.integration.test_supabase"]
 
 
@@ -107,11 +113,9 @@ class TestSeedDataIntegration:
         assert response.status_code == 200
         data = response.json()
 
-        # Todos los profesionales del seed deberían tener publicación
         profesionales = data["profesionales"]
         if profesionales:
             primer_prof = profesionales[0]
-            # La estructura debería incluir datos básicos del profesional
             assert "nombre" in primer_prof or "usuario" in primer_prof
 
     @pytest.mark.integration
@@ -128,7 +132,6 @@ class TestSeedDataIntegration:
         assert response.status_code == 200
         data = response.json()
 
-        # Debería haber al menos algunos profesionales en CABA
         assert data["total"] > 0
 
     @pytest.mark.integration
@@ -142,7 +145,6 @@ class TestSeedDataIntegration:
 
         response = client_supabase.post("/busqueda/profesionales", json=payload)
 
-        # Dependiendo de la implementación, puede ser 400 o retornar todos
         assert response.status_code in [200, 400, 422]
 
     @pytest.mark.integration
@@ -169,22 +171,14 @@ class TestSeedDataCount:
     @pytest.mark.supabase
     def test_total_profesionales_100(self, client_supabase, db_session_supabase):
         """Verifica que haya exactamente 100 profesionales"""
-        from app.infra.persistence.perfiles import ProfesionalORM
 
         count = db_session_supabase.query(ProfesionalORM).count()
         assert count == 100
-
-    # Test eliminado: test_total_solicitantes_50
-    # Falla debido a usuarios de test creados durante desarrollo
-
-    # Test eliminado: test_total_pacientes_50
-    # Falla debido a pacientes de test creados durante desarrollo
 
     @pytest.mark.integration
     @pytest.mark.supabase
     def test_total_publicaciones_100(self, client_supabase, db_session_supabase):
         """Verifica que haya exactamente 100 publicaciones (1 por profesional)"""
-        from app.infra.persistence.publicaciones import PublicacionORM
 
         count = db_session_supabase.query(PublicacionORM).count()
         assert count == 100
@@ -193,7 +187,6 @@ class TestSeedDataCount:
     @pytest.mark.supabase
     def test_disponibilidades_entre_200_300(self, client_supabase, db_session_supabase):
         """Verifica que haya entre 200-300 disponibilidades (2-3 por profesional)"""
-        from app.infra.persistence.agenda import DisponibilidadORM
 
         count = db_session_supabase.query(DisponibilidadORM).count()
         assert 200 <= count <= 300
@@ -202,8 +195,6 @@ class TestSeedDataCount:
     @pytest.mark.supabase
     def test_todos_profesionales_tienen_especialidad(self, db_session_supabase):
         """Verifica que todos los profesionales tengan al menos una especialidad"""
-        from app.infra.persistence.perfiles import ProfesionalORM
-        from sqlalchemy import text
 
         total_prof = db_session_supabase.query(ProfesionalORM).count()
         result = db_session_supabase.execute(
@@ -211,18 +202,14 @@ class TestSeedDataCount:
         )
         total_asignaciones = result.scalar()
 
-        # En el seed, cada profesional tiene exactamente 1 especialidad
         assert total_prof == total_asignaciones == 100
 
     @pytest.mark.integration
     @pytest.mark.supabase
     def test_todos_profesionales_tienen_matricula(self, db_session_supabase):
         """Verifica que todos los profesionales tengan matrícula"""
-        from app.infra.persistence.perfiles import ProfesionalORM
-        from app.infra.persistence.matriculas import MatriculaORM
 
         total_prof = db_session_supabase.query(ProfesionalORM).count()
         total_matriculas = db_session_supabase.query(MatriculaORM).count()
 
-        # Cada profesional tiene 1 matrícula
         assert total_prof == total_matriculas == 100

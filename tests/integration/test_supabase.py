@@ -13,6 +13,14 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.api.dependencies import get_db
 
+from app.infra.persistence.servicios import EspecialidadORM
+from app.infra.persistence.ubicacion import (
+    ProvinciaORM,
+    DepartamentoORM,
+    BarrioORM,
+)
+from uuid import uuid4
+
 
 def get_supabase_test_url():
     """
@@ -97,14 +105,6 @@ def seed_supabase_data(db_session_supabase):
     Carga datos de prueba en Supabase
     Se hace rollback automáticamente después del test
     """
-    from app.infra.persistence.servicios import EspecialidadORM
-    from app.infra.persistence.ubicacion import (
-        ProvinciaORM,
-        DepartamentoORM,
-        BarrioORM,
-    )
-    from uuid import uuid4
-
     provincia = ProvinciaORM(id=str(uuid4()), nombre="Buenos Aires Test")
     db_session_supabase.add(provincia)
     db_session_supabase.flush()
@@ -242,36 +242,3 @@ class TestSupabaseConDatosReales:
         response = client_supabase.post("/busqueda/profesionales", json=payload)
 
         assert response.status_code == 200
-
-
-"""
-CONFIGURACIÓN EN .env:
-
-# Opción 1: Usar misma BD de desarrollo (recomendado para tests)
-SUPABASE_DB_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres
-
-# Opción 2: Proyecto Supabase separado para tests
-SUPABASE_TEST_DB_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres
-
-COMANDOS:
-
-# Tests con Supabase (requiere .env configurado)
-pytest tests/integration/test_supabase.py -v -m supabase
-
-# Solo tests de lectura (no modifican BD)
-pytest tests/integration/test_supabase.py -v -m readonly
-
-# Todos los tests de integración
-pytest tests/integration -v -m integration
-
-# Excluir tests que requieren Supabase
-pytest tests/ -v -m "not supabase"
-
-VENTAJAS DE ESTA ARQUITECTURA:
-
-1. ✅ Rollback automático: BD queda limpia después de cada test
-2. ✅ Tests aislados: No interfieren entre sí
-3. ✅ Usa tu BD real: Valida con PostGIS y todas las extensiones
-4. ✅ CI/CD friendly: Usa secrets para connection string
-5. ✅ Rápido: Supabase tiene buena latencia
-"""
