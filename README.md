@@ -89,6 +89,9 @@ ATHomeRed/
 ├── pytest.ini                        # Configuración de pytest
 ├── requirements.txt                  # Dependencias básicas de la app
 ├── requirements-dev.txt              # Dependencias extra para desarrollo/testing
+├── docs/
+│   └── uml/
+│       └── UML_ATHomeRed_Domain      # Diagrama UML (dominio)
 ├── alembic/
 │   ├── env.py                        # Bootstrap de Alembic (engine, metadata, etc.)
 │   ├── script.py.mako                # Template para generar nuevas migraciones
@@ -352,7 +355,7 @@ En cuanto al **estado actual**, el proyecto ya cuenta con Strategy operativo en 
 El proyecto incluye un diagramas UML de dominio. El mismo puede observarse en el siguiente enlace:
 
 
-- **[Diagrama de clases (de dominio)](app/docs/uml/clases-uml-v1.svg)**
+- **[Diagrama de clases (de dominio)](docs/uml/UML_ATHomeRed_Domain.svg)**
 
 ### Qué muestra
 
