@@ -23,11 +23,6 @@ from app.domain.eventos import (
 )
 
 
-# ============================================================
-# OBSERVERS DE TEST (Mock)
-# ============================================================
-
-
 class MockObserver(Observer):
     """Observer simulado para tests"""
 
@@ -47,11 +42,6 @@ class MockSubject(Subject):
     def trigger_event(self, evt: Event) -> None:
         """Dispara un evento para notificar observers"""
         self.notify(evt)
-
-
-# ============================================================
-# TESTS DEL PATRÓN OBSERVER (Subject/Observer)
-# ============================================================
 
 
 class TestSubjectObserverPattern:
@@ -78,7 +68,7 @@ class TestSubjectObserverPattern:
         observer = MockObserver()
 
         subject.attach(observer)
-        subject.attach(observer)  # Intento duplicar
+        subject.attach(observer)
 
         assert len(subject.observers) == 1
 
@@ -98,7 +88,6 @@ class TestSubjectObserverPattern:
         subject = MockSubject()
         observer = MockObserver()
 
-        # No falla aunque observer no esté agregado
         subject.detach(observer)
         assert len(subject.observers) == 0
 
@@ -116,7 +105,6 @@ class TestSubjectObserverPattern:
         evento = Event(tipo="test.evento", cita_id=uuid4(), datos={"test": "data"})
         subject.notify(evento)
 
-        # Todos los observers fueron notificados
         assert obs1.update_count == 1
         assert obs2.update_count == 1
         assert obs3.update_count == 1
@@ -146,13 +134,7 @@ class TestSubjectObserverPattern:
         subject = MockSubject()
         evento = Event(tipo="test", cita_id=uuid4(), datos={})
 
-        # No debe fallar
         subject.notify(evento)
-
-
-# ============================================================
-# TESTS DE NOTIFICADOR EMAIL
-# ============================================================
 
 
 class TestNotificadorEmail:
@@ -179,7 +161,6 @@ class TestNotificadorEmail:
 
         self.notificador.update(evento)
 
-        # Captura output impreso
         captured = capsys.readouterr()
         assert "CITA CREADA" in captured.out
         assert str(self.cita_id) in captured.out
@@ -244,13 +225,7 @@ class TestNotificadorEmail:
         """Eventos desconocidos no generan error"""
         evento = Event(tipo="tipo.desconocido", cita_id=self.cita_id, datos={})
 
-        # No debe fallar
         self.notificador.update(evento)
-
-
-# ============================================================
-# TESTS DE AUDIT LOGGER
-# ============================================================
 
 
 class TestAuditLogger:
@@ -272,15 +247,9 @@ class TestAuditLogger:
         with caplog.at_level("INFO"):
             logger.update(evento)
 
-        # Verifica que se registró en log
         assert any("[AUDIT]" in record.message for record in caplog.records)
         assert any("cita.creada" in record.message for record in caplog.records)
         assert any(str(cita_id) in record.message for record in caplog.records)
-
-
-# ============================================================
-# TESTS DE EVENT BUS
-# ============================================================
 
 
 class TestEventBus:
@@ -353,7 +322,6 @@ class TestEventBus:
         """Publicar evento sin suscriptores no genera error"""
         evento = Event(tipo="evento.sin.suscriptores", cita_id=uuid4(), datos={})
 
-        # No debe fallar
         self.bus.publicar(evento)
 
     def test_suscribir_observer_tradicional(self):
@@ -393,17 +361,10 @@ class TestEventBus:
         with caplog.at_level("ERROR"):
             self.bus.publicar(evento)
 
-        # Los handlers OK ejecutaron a pesar del error
         assert len(eventos_procesados) == 2
-        # El error se registró
         assert any(
             "Error procesando evento" in record.message for record in caplog.records
         )
-
-
-# ============================================================
-# TESTS DE INTEGRACIÓN OBSERVER + EVENT BUS
-# ============================================================
 
 
 class TestIntegracionObserverEventBus:
@@ -415,23 +376,18 @@ class TestIntegracionObserverEventBus:
         notificador = NotificadorEmail()
         audit = AuditLogger()
 
-        # Suscribir observers a diferentes eventos
         bus.suscribir_observer("cita.creada", notificador)
         bus.suscribir_observer("cita.creada", audit)
         bus.suscribir_observer("cita.cancelada", notificador)
 
-        # Publicar evento CitaCreada
         cita_id = uuid4()
         evento_creada = CitaCreada(
             cita_id=cita_id, profesional_id=uuid4(), paciente_id=uuid4()
         )
         bus.publicar(evento_creada)
-
-        # Verificar que NotificadorEmail procesó
         captured = capsys.readouterr()
         assert "CITA CREADA" in captured.out
 
-        # Publicar evento CitaCancelada
         evento_cancelada = CitaCancelada(cita_id=cita_id, motivo="Test cancelación")
         bus.publicar(evento_cancelada)
 
@@ -455,17 +411,14 @@ class TestIntegracionObserverEventBus:
 
     def test_combinar_subject_y_eventbus(self):
         """Puede combinar Subject y EventBus en el mismo flujo"""
-        # Subject tradicional
         subject = MockSubject()
         obs1 = MockObserver()
         subject.attach(obs1)
 
-        # EventBus moderno
         bus = EventBus()
         obs2 = MockObserver()
         bus.suscribir_observer("cita.creada", obs2)
 
-        # Publicar mismo evento en ambos
         evento = CitaCreada(
             cita_id=uuid4(), profesional_id=uuid4(), paciente_id=uuid4()
         )
@@ -473,14 +426,8 @@ class TestIntegracionObserverEventBus:
         subject.notify(evento)
         bus.publicar(evento)
 
-        # Ambos observers fueron notificados
         assert obs1.update_count == 1
         assert obs2.update_count == 1
-
-
-# ============================================================
-# TESTS DE EVENTOS DEL DOMINIO
-# ============================================================
 
 
 class TestEventosDominio:

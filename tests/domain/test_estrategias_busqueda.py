@@ -12,6 +12,8 @@ from app.domain.strategies.estrategia import (
     BusquedaCombinada,
 )
 
+from app.domain.entities.catalogo import FiltroBusqueda
+
 
 class TestBusquedaPorZona:
     """Tests para la estrategia de búsqueda por zona"""
@@ -19,8 +21,6 @@ class TestBusquedaPorZona:
     def test_busca_por_provincia(self, mock_profesional_repository_con_datos):
         """Búsqueda por provincia correctamente delegada"""
         estrategia = BusquedaPorZona()
-
-        from app.domain.entities.catalogo import FiltroBusqueda
 
         filtro = FiltroBusqueda(provincia="Buenos Aires")
 
@@ -34,8 +34,6 @@ class TestBusquedaPorZona:
     ):
         """Búsqueda con todos los parámetros de ubicación"""
         estrategia = BusquedaPorZona()
-
-        from app.domain.entities.catalogo import FiltroBusqueda
 
         filtro = FiltroBusqueda(
             provincia="Buenos Aires", departamento="CABA", barrio="Flores"
@@ -56,8 +54,6 @@ class TestBusquedaPorEspecialidad:
         """Búsqueda por nombre de especialidad"""
         estrategia = BusquedaPorEspecialidad()
 
-        from app.domain.entities.catalogo import FiltroBusqueda
-
         filtro = FiltroBusqueda(nombre_especialidad="Cardiología")
 
         resultado = estrategia.buscar(mock_profesional_repository_con_datos, filtro)
@@ -70,8 +66,6 @@ class TestBusquedaPorEspecialidad:
     def test_busca_por_id_especialidad(self, mock_profesional_repository_con_datos):
         """Búsqueda por ID de especialidad"""
         estrategia = BusquedaPorEspecialidad()
-
-        from app.domain.entities.catalogo import FiltroBusqueda
 
         filtro = FiltroBusqueda(id_especialidad=1)
 
@@ -89,8 +83,6 @@ class TestBusquedaCombinada:
         """Búsqueda combinada: especialidad + provincia"""
         estrategia = BusquedaCombinada()
 
-        from app.domain.entities.catalogo import FiltroBusqueda
-
         filtro = FiltroBusqueda(
             nombre_especialidad="Cardiología", provincia="Buenos Aires"
         )
@@ -103,8 +95,6 @@ class TestBusquedaCombinada:
     def test_busca_combinada_completa(self, mock_profesional_repository_con_datos):
         """Búsqueda combinada con todos los parámetros"""
         estrategia = BusquedaCombinada()
-
-        from app.domain.entities.catalogo import FiltroBusqueda
 
         filtro = FiltroBusqueda(
             nombre_especialidad="Cardiología",
@@ -157,8 +147,6 @@ class TestBusquedaEdgeCases:
         """Los campos None en el filtro deben ser ignorados"""
         estrategia = BusquedaPorEspecialidad()
         repo = Mock()
-
-        from app.domain.entities.catalogo import FiltroBusqueda
 
         filtro = FiltroBusqueda(
             nombre_especialidad="Cardiología", provincia=None, barrio=None
