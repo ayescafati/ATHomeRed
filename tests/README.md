@@ -1,3 +1,4 @@
+
 # Tests - ATHomeRed
 
 ## Índice
@@ -11,7 +12,6 @@
 - [Configuración](#configuración)
 - [Resultados de la suite de tests](#resultados-de-la-suite-de-tests)
 - [Notas](#notas)
-- [Para la entrega académica](#para-la-entrega-académica)
 - [Referencias](#referencias)
 
 ---
@@ -211,16 +211,11 @@ El hecho de contar con un seed completo en la base de datos (a través del ORM) 
 
 ---
 
-## Para la entrega académica
-
-Para la entrega académica, la suite de tests demuestra una cobertura robusta y actualizada de la lógica de negocio y la API en el dominio específico de acompañantes terapéuticos y enfermería domiciliaria. Todos los tests relevantes se ejecutan exitosamente y validan los principales flujos del sistema, incluyendo autenticación, búsquedas, reglas de dominio y persistencia. Los tests E2E están documentados y listos para ser ejecutados en entornos controlados que repliquen la instancia de base de datos con seed completo.
-
----
-
 ## Referencias
 
 Para el enfoque adoptado en la escritura y organización de las pruebas se tomaron como referencia la documentación oficial de pytest, que describe buenas prácticas para estructurar suites de tests y utilizar markers; la documentación de FastAPI sobre testing, que muestra cómo ejercitar la API utilizando `TestClient`; los principios de desarrollo guiado por tests (TDD), que proponen el ciclo Red–Green–Refactor; y las ideas de arquitectura limpia, que fomentan testear la lógica de dominio sin dependencias duras de infraestructura externa.
 
 ---
 
+Proyecto: ATHomeRed – Plataforma de Acompañantes Terapéuticos y Enfermería
 Proyecto: ATHomeRed – Plataforma de Acompañantes Terapéuticos y Enfermería
