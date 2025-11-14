@@ -8,6 +8,9 @@
 **Materia:** Programación II – UNSAM
 **Cuatrimestre:** 2C 2025
 
+**Deploy (Render):** [https://athomered-1.onrender.com](https://athomered-1.onrender.com)  
+**Docs (Swagger UI):** [https://athomered-1.onrender.com/docs](https://athomered-1.onrender.com/docs)
+
 ---
 
 ## Índice
@@ -21,10 +24,12 @@
   - [Clases principales](#clases-principales)
   - [Patrones y arquitectura](#patrones-y-arquitectura)
 - [Diagrama UML](#diagrama-uml)
+- [Presentación (Canva)](#presentación-canva)
 - [Tecnologías](#tecnologías)
 - [Configuración](#configuración)
 - [Puesta en marcha](#puesta-en-marcha)
   - [Local](#local)
+  - [Producción (Render)](#producción-render)
   - [Con Docker (DB)](#con-docker-db)
   - [Migraciones](#migraciones)
 - [API rapida](#api-rápida)
@@ -376,6 +381,15 @@ El proyecto incluye un diagramas UML de dominio. El mismo puede observarse en el
 
 ---
 
+## Presentación (Canva)
+
+La presentación utilizada para exponer el proyecto puede verse en el siguiente enlace:
+
+- [Ver presentación en Canva](https://www.canva.com/design/DAG4oDxIeHw/tnIWLaE6OiSu6puOHtIJhg/edit?ui=eyJBIjp7fX0)
+
+
+---
+
 
 ## Tecnologías
 
@@ -461,6 +475,14 @@ alembic downgrade -1
 
 ---
 
+### Producción (Render)
+
+La API está desplegada en Render en:
+
+- Base URL: https://athomered-1.onrender.com  
+- Docs (Swagger UI): https://athomered-1.onrender.com/docs
+
+---
 
 ## API rápida
 
