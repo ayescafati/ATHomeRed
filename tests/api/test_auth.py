@@ -15,6 +15,15 @@ from app.main import app
 from app.api.dependencies import get_db
 from tests.api.auth_minimal_models import Base, UsuarioORM, RefreshTokenORM
 
+from app.services import auth_service
+from app.infra.repositories import usuario_repository
+import app.api.routers.auth as auth_router_mod
+
+from sqlalchemy.orm import Session
+
+from datetime import timedelta
+from app.services.auth_service import AuthService
+
 
 def _setup_sqlite_memory():
     """
@@ -68,10 +77,11 @@ class FakeUsuarioRepository:
         Commit + refresh para devolver el objeto persistido.
         """
         import uuid
-        if 'id' not in kwargs or kwargs['id'] is None:
-            kwargs['id'] = str(uuid.uuid4())
+
+        if "id" not in kwargs or kwargs["id"] is None:
+            kwargs["id"] = str(uuid.uuid4())
         else:
-            kwargs['id'] = str(kwargs['id'])
+            kwargs["id"] = str(kwargs["id"])
         user = UsuarioORM(**kwargs)
         print(f"[DEBUG] crear_usuario: creando usuario id={user.id} email={user.email}")
         self.db.add(user)
@@ -83,7 +93,7 @@ class FakeUsuarioRepository:
         """Actualiza (dummy) el `ultimo_login` del usuario con ese id."""
         user = self.obtener_por_id(usuario_id)
         if user:
-            user.ultimo_login = None  
+            user.ultimo_login = None
             self.db.commit()
 
     def incrementar_intentos_fallidos(self, email):
@@ -108,7 +118,9 @@ class FakeUsuarioRepository:
             f"[DEBUG] obtener_por_id: buscando id={usuario_id} "
             f"(str={str(usuario_id)}), en DB: {all_ids}"
         )
-        return self.db.query(UsuarioORM).filter(UsuarioORM.id == str(usuario_id)).first()
+        return (
+            self.db.query(UsuarioORM).filter(UsuarioORM.id == str(usuario_id)).first()
+        )
 
 
 class FakeAuthRepository:
@@ -133,7 +145,11 @@ class FakeAuthRepository:
 
     def obtener_refresh_token(self, token):
         """Devuelve un token activo (no revocado) o None."""
-        return self.db.query(RefreshTokenORM).filter_by(token=token, revocado=False).first()
+        return (
+            self.db.query(RefreshTokenORM)
+            .filter_by(token=token, revocado=False)
+            .first()
+        )
 
     def revocar_refresh_token(self, token):
         """Marca un token como revocado; True si lo encontró y revocó."""
@@ -146,7 +162,11 @@ class FakeAuthRepository:
 
     def revocar_todos_tokens_usuario(self, usuario_id):
         """Revoca todos los tokens activos del usuario y devuelve cuántos fueron."""
-        tokens = self.db.query(RefreshTokenORM).filter_by(usuario_id=usuario_id, revocado=False).all()
+        tokens = (
+            self.db.query(RefreshTokenORM)
+            .filter_by(usuario_id=usuario_id, revocado=False)
+            .all()
+        )
         for t in tokens:
             t.revocado = True
         self.db.commit()
@@ -212,9 +232,6 @@ def client_auth():
         finally:
             db.close()
 
-    from app.services import auth_service
-    from app.infra.repositories import usuario_repository
-    import app.api.routers.auth as auth_router_mod
     orig_init = auth_service.AuthService.__init__
     orig_repo = usuario_repository.UsuarioRepository
     orig_router_repo = getattr(auth_router_mod, "UsuarioRepository", None)
@@ -241,11 +258,6 @@ def client_auth():
             auth_router_mod.UsuarioRepository = orig_router_repo
 
 
-# TESTS DE AUTENTICACIÓN
-
-# 1. test_login_registro: Test principal de autenticación mínima.
-#    Valida que un usuario pueda registrarse, iniciar sesión, consultar /me y renovar el token correctamente.
-
 @pytest.mark.authflow
 @pytest.mark.auth_ok
 def test_login_registro(client_auth: TestClient):
@@ -263,7 +275,6 @@ def test_login_registro(client_auth: TestClient):
     - El endpoint protegido reconozca el Bearer token.
     - El endpoint de refresh devuelva un nuevo access token.
     """
-    # 1) Registro
     r = client_auth.post(
         "/api/v1/auth/register-json",
         json={
@@ -311,15 +322,13 @@ def test_login_registro(client_auth: TestClient):
     print("[TEST] Nuevo access_token:", tok2)
     assert "access_token" in tok2
 
-    from sqlalchemy.orm import Session
-    from tests.api.auth_minimal_models import UsuarioORM
     db: Session = next(app.dependency_overrides[get_db]())
     usuarios = db.query(UsuarioORM).all()
     print("[TEST] Usuarios en la DB de test:")
     for u in usuarios:
         print(f"  id={u.id} email={u.email} nombre={u.nombre} activo={u.activo}")
 
-# 2. test_login_password_incorrecta: Verifica que la API responde 401 si la contraseña es inválida.
+
 @pytest.mark.authflow
 @pytest.mark.auth_neg
 def test_login_password_incorrecta(client_auth: TestClient):
@@ -329,7 +338,6 @@ def test_login_password_incorrecta(client_auth: TestClient):
     - Se intenta loguear con password incorrecta.
     - Debe responder 401 (no autorizado).
     """
-    # Registro
     r = client_auth.post(
         "/api/v1/auth/register-json",
         json={
@@ -343,14 +351,13 @@ def test_login_password_incorrecta(client_auth: TestClient):
     )
     assert r.status_code in (200, 201), r.text
 
-    # Login con password incorrecta
     r = client_auth.post(
         "/api/v1/auth/login",
         json={"email": "wrongpass@probando.com", "password": "Incorrecta!"},
     )
     assert r.status_code == 401, r.text
 
-# 3. test_me_sin_autorizacion: Verifica que la API responde 401 si no se envía Authorization.
+
 @pytest.mark.authflow
 @pytest.mark.auth_neg
 def test_me_sin_autorizacion(client_auth: TestClient):
@@ -362,7 +369,7 @@ def test_me_sin_autorizacion(client_auth: TestClient):
     r = client_auth.get("/api/v1/auth/me")
     assert r.status_code == 401, r.text
 
-# 4. test_refresh_token_invalido: Verifica que la API responde 401 si el refresh_token no existe.
+
 @pytest.mark.authflow
 @pytest.mark.auth_neg
 def test_refresh_token_invalido(client_auth: TestClient):
@@ -397,8 +404,7 @@ def test_refresh_token_invalido(client_auth: TestClient):
     )
     assert r.status_code == 401, r.text
 
-# 5. test_me_bearer_malformado: Test de acceso a /me con Bearer malformado.
-#    Verifica que la API responde 401 si el token es inválido o corrupto.
+
 @pytest.mark.authflow
 @pytest.mark.auth_neg
 def test_me_bearer_malformado(client_auth: TestClient):
@@ -434,7 +440,6 @@ def test_me_bearer_malformado(client_auth: TestClient):
     assert r.status_code == 401, r.text
 
 
-# 6. Registro duplicado: segundo alta con el mismo email debe fallar (400/409).
 @pytest.mark.authflow
 @pytest.mark.auth_neg
 def test_register_email_duplicado(client_auth: TestClient):
@@ -465,7 +470,6 @@ def test_register_email_duplicado(client_auth: TestClient):
     assert r2.status_code in (400, 409), r2.text
 
 
-# 7. Registro con email inválido: FastAPI debe devolver 422 (validación).
 @pytest.mark.authflow
 @pytest.mark.auth_neg
 def test_register_email_invalido(client_auth: TestClient):
@@ -483,7 +487,6 @@ def test_register_email_invalido(client_auth: TestClient):
     assert r.status_code == 422, r.text
 
 
-# 8. Login de usuario inexistente: debe responder 401.
 @pytest.mark.authflow
 @pytest.mark.auth_neg
 def test_login_usuario_inexistente(client_auth: TestClient):
@@ -494,7 +497,6 @@ def test_login_usuario_inexistente(client_auth: TestClient):
     assert r.status_code == 401, r.text
 
 
-# 9. Refresh sin campo obligatorio: debe responder 422 (validación).
 @pytest.mark.authflow
 @pytest.mark.auth_neg
 def test_refresh_sin_campo_obligatorio(client_auth: TestClient):
@@ -502,7 +504,6 @@ def test_refresh_sin_campo_obligatorio(client_auth: TestClient):
     assert r.status_code == 422, r.text
 
 
-# 10. /me con access token expirado: debe responder 401.
 @pytest.mark.authflow
 @pytest.mark.auth_neg
 def test_me_con_token_expirado(client_auth: TestClient):
@@ -519,9 +520,6 @@ def test_me_con_token_expirado(client_auth: TestClient):
     )
     assert r_reg.status_code in (200, 201), r_reg.text
     reg = r_reg.json()
-
-    from datetime import timedelta
-    from app.services.auth_service import AuthService
 
     expired_token = AuthService.crear_access_token(
         data={

@@ -1,12 +1,14 @@
 """
 Modelos mínimos para test de auth API flow (sin FKs ni esquema).
 """
+
 from sqlalchemy import Column, String, DateTime, Boolean, Integer, Text
 from sqlalchemy.orm import declarative_base
 from datetime import datetime
 import uuid
 
 Base = declarative_base()
+
 
 class UsuarioORM(Base):
     __tablename__ = "usuario"
@@ -24,6 +26,7 @@ class UsuarioORM(Base):
     activo = Column(Boolean, default=True, nullable=False)
     verificado = Column(Boolean, default=False, nullable=False)
 
+
 class RefreshTokenORM(Base):
     __tablename__ = "refresh_tokens"
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -34,6 +37,7 @@ class RefreshTokenORM(Base):
     ip_address = Column(String(45))
     user_agent = Column(String(255))
     creado_en = Column(DateTime, default=datetime.utcnow, nullable=False)
+
 
 class AuditoriaLoginORM(Base):
     __tablename__ = "auditoria_login"
